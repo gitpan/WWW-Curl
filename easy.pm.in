@@ -1,0 +1,308 @@
+# Perl interface for libcurl. Check out the file README for more info.
+
+package WWW::Curl::easy;
+
+use strict;
+use Carp;
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
+
+require WWW::Curl;
+
+require Exporter;
+require AutoLoader;
+
+@ISA = qw(Exporter DynaLoader);
+# Items to export into callers namespace by default. Note: do not export
+# names by default without a very good reason. Use EXPORT_OK instead.
+# Do not simply export all your public functions/methods/constants.
+@EXPORT = qw(
+@CURLOPT_INCLUDE@
+USE_INTERNAL_VARS
+);
+
+$VERSION = '2.0';
+
+
+$WWW::Curl::easy::headers = "";
+$WWW::Curl::easy::content = "";
+
+sub AUTOLOAD {
+    # This AUTOLOAD is used to 'autoload' constants from the constant()
+    # XS function.
+
+    (my $constname = $AUTOLOAD) =~ s/.*:://;
+    return constant($constname, 0);
+}
+
+# bootstrap WWW::Curl::easy $VERSION;
+
+# Preloaded methods go here.
+
+# Autoload methods go after __END__, and are processed by the autosplit program.
+
+1;
+__END__
+# Below is the documentation.
+
+=cut 
+
+=head1 NAME
+
+WWW::Curl::easy - Perl extension interface for libcurl
+
+=head1 SYNOPSIS
+
+	use WWW::Curl::easy;
+ 
+	my $curl = WWW::Curl::easy->new(); # an alias for WWW::Curl::easy::init
+	my $code = $curl->setopt(CURLOPT_option, ....);
+	   $code = $curl->perform($curl);
+	my $err = $curl->errbuf; # report any error message
+	my $info = $curl->getinfo(CURLINFO_option);
+
+	$curl->cleanup(); # optional
+
+	WWW::Curl::easy::global_cleanup(); # optional cleanup at exit
+
+Read the curl man pages, curl_easy_setopt(3) and curl_easy_getinfo(3) for details of CURLOPT_option and CURLINFO_option values.
+
+=head1 DESCRIPTION
+ 
+B<WWW::Curl::easy> provides an interface to the libcurl C library. See
+http://curl.haxx.se/ for more information on cURL and libcurl.
+
+Before v2.0, this modules was called 'Curl::easy'. The name has changed to 'WWW::Curl::easy' (to better suit
+CPAN naming guidelines). The new version includes a compatability package, so existing scripts
+using the 'Curl::easy' name will continue to work as before. New scripts should use the 
+'WWW::Curl::easy' name.
+
+From v1.30, this interface supports the perl OO style of creating
+$curl handles, and calling methods to get and set curl parameters. Previous
+versions of this interface only supported the straight 'subroutine' call style
+of accessing curl. Scripts using the older style are still compatible (but see
+COMPATABILITY, below), but this documentation and the test scripts have been
+updated to the OO style.
+
+=head2 FILES and CALLBACKS
+
+WWW::Curl::easy supports the various options of curl_easy_setopt which require either a FILE * or
+a callback (subroutine) reference.
+
+Callback to perl subroutines are handled by this XS interface through a wrapper which takes
+care of converting from C to perl variables and back again. This wrapper also simplifies some
+'C' style arguments to make them behave in a more 'perl' like manner. In particular, the
+read and write callbacks do not look just like the 'fread' and 'fwrite' C functions -
+perl variables do not need separate length parameters, and perl functions can return a list of
+variables, instead of needing a pointer to modify. The details are described below.
+
+=head2 C<FILE *> handles (GLOBS)
+ 
+Curl options which take a C<FILE *>, such as C<CURLOPT_FILE>, C<CURLOPT_WRITEHEADER>,
+C<CURLOPT_INFILE>
+can be passed a perl file handle:
+ 
+	open BODY,">body.out";
+	$code = $curl->setopt(CURLOPT_FILE, *BODY);
+
+=head2 WRITE callback
+
+The C<CUROPT_WRITEFUNCTION> option may be set which will cause libcurl to call back to
+the referenced perl subroutine:
+
+	sub chunk { my ($data,$pointer)=@_; ...do something...; return length($data) }
+
+	# call the above routine from curl:
+	$code = $curl->setopt(CURLOPT_WRITEFUNCTION, \&chunk );
+	$code = $curl->setopt(CURLOPT_FILE, \$variable );
+	$curl->perform();
+
+The subroutine will be passed whatever is defined by C<CURLOPT_FILE>. This can be
+a reference to a regular variable (as above), or a glob or anything else you like.
+
+The callback function must return the number of bytes 'handled' ( C<length($data)> ) or
+the transfer will abort. A transfer can be aborted by returning a value of 0, for example.
+
+The option C<CURLOPT_WRITEHEADER> can be set to pass a different C<$pointer> into the
+CURLOPT_WRITEFUNCTION for header values. This lets you collect the headers and body separately, as
+shown in the example below:
+
+    use WWW::Curl::easy;
+    my $headers="";
+    my $body="";
+    sub chunk { my ($data,$pointer)=@_; ${$pointer}.=$data; return length($data) }
+
+    my $curl=WWW::Curl::easy->new;
+    ...
+    my $code = $curl->setopt(CURLOPT_WRITEFUNCTION, \&chunk );
+       $code = $curl->setopt(CURLOPT_WRITEHEADER, \$headers );
+       $code = $curl->setopt(CURLOPT_FILE, \$body );
+    $curl->perform();
+    print $body;
+
+If you have libcurl > 7.7.1, then you could instead set C<CURLOPT_HEADERFUNCTION> to a different
+callback, and have the header collected that way.
+
+=head2 READ callback
+
+WWW::Curl::easy supports C<CURLOPT_READFUNCTION>. This function should follow this prototype:
+
+	sub read_callback {
+	    my ($maxlength,$pointer)=@_;
+		....
+            return $data;
+	}
+
+The subroutine must return an empty string "" at the end of the data. Note that this function
+isn't told how much data to provide - $maxlength is just the maximum size of the buffer
+provided by libcurl. If you are doing an HTTP POST or PUT for example, it is important that this
+function only returns (in total) as much data as the 'Content-Length' header specifies, followed by
+a an empty (0 length) buffer.
+
+=head2 PROGRESS callback
+
+WWW::Curl::easy supports C<CURLOPT_PROGRESSFUNCTION>. This function should follow this prototype:
+
+	sub progress_callback {
+	    my ($clientp,$dltotal,$dlnow,$ultotal,$ulnow)=@_;
+		....
+	    return 0;
+	}                        
+
+The function should return 0 normally, or -1 which will abort/cancel the
+transfer. C<$clientp> is whatever is set using the C<CURLOPT_PROGRESSDATA> option.
+
+=head2 PASSWD callback
+
+WWW::Curl::easy supports C<CURLOPT_PASSWDFUNCTION>. This function should look something like this:
+ 
+	sub passwd_callback {
+	    my ($clientp,$prompt,$buflen)=@_;
+		...
+	    return (0,$data);
+	}                    
+
+C<$clientp> is whatever scalar is set using the C<CURLOPT_PASSWDDATA> option.
+C<$prompt> is a text string which can be used to prompt for a password.
+C<$buflen> is the maximum length of the accepted password reply.
+
+The function must return 0 (for 'OK') and the password data as a list.
+Return (-1,"") to indicate an error.
+
+=head2 STDERR redirection
+
+You can use set the option C<CURLOPT_STDERR> to an alternate file handle glob
+to redirect stderr messages from libcurl, if your libcurl version has this option.
+
+	open(OTHERFILE,">/dev/null") or die;
+ 	$curl->setopt(CURLOPT_STDERR,*OTHERFILE);
+
+=head1 COMPATABILITY NOTES
+
+As noted in the introduction, this module was previously called 'Curl::easy', and has
+been renamed for upload to CPAN as 'WWW::Curl'. Scripts should use the 'WWW:Curl::easy' functions
+for access basic libcurl functions. At some point, a 'higher level' perl interface is intended to become
+'WWW::Curl', and act as a wrapper around WWW::Curl::easy, with more perl-like defaults and interface
+syntax.
+
+=item *
+
+=over 4
+
+Early releases of this module didn't reliably deal with more than a single
+curl handle per process, because of the use of a number of global 'glue' variables
+in various places. This should now be fixed, but certain interface features could not
+be made reliably forward compatible if you intend to use multiple handles or threading:
+
+=over 4
+
+=item *
+
+The (largely undocumented) USE_INTERNAL_VARS feature, which previously collected data in a
+static global buffer, has been ported to use the new threadable structure, but
+the method by which it returns it's output (directly into specific global variables)
+cannot be made safe without destroying backwards compatibility. The interface is considered
+DEPRECATED in this release, and will be removed *VERY SOON* - instead, use a perl subroutine
+callback to collect output into a string (as shown in the example above), which should be safe
+across multiple threads/handles.
+
+=item *
+
+You can build this module without the USE_INTERNAL_VARS interface by compiling with
+-UWITH_INTERNAL_VARS. This will become the default in a future release.
+
+=back
+
+=item *
+
+Returning the error buffer by passing the name of a perl variable through C<$curl-E<gt>setopt>
+is ugly.  It is still supported, but instead, you can get the information by calling the new method
+C<$curl->errbuf> directly.
+
+=item *
+
+Returning CURLINFO variables by passing the output variable to C<$curl-E<gt>getinfo> is ugly.
+It is still supported, but instead, you can get the information as the return value from
+getinfo. Instead of:
+
+	my $bytes;
+	WWW::Curl::easy::getinfo($curl, CURLINFO_SIZE_DOWNLOAD, $bytes);
+
+use:
+	my $bytes=$curl->getinfo(CURLINFO_SIZE_DOWNLOAD);
+
+
+=item *
+
+C<$curl-E<gt>cleanup> ( WWW::Curl::easy::cleanup($curl) ) no longer actually does anything. Curl
+handles will be automatically cleaned up by perl when they are no longer used.
+
+=item *
+
+curl_global_init is now explicitly called when the module is first loaded, rather than relying on
+it hapenning during the first call to curl_easy_init. This should eliminate the chance of a race if
+creating two handles simultaneously. (E.g. using perl ithreads).
+
+=item *
+
+curl_global_cleanup is not called automatically when perl or the module shuts down, as there
+doesn't seem an easy way to arrange this in perl-XS (suggestions welcome). You can call curl 
+global cleanup explicitly (if you care) by calling the class method WWW::Curl::easy::global_cleanup .
+Don't call any other curl functions afterwards!
+
+=head1 KNOWN BUGS
+
+There seems to be a slow leak of a few bytes each time a WWW::Curl::easy handle is created and
+destroyed (despite careful cleanup efforts) at least when testing with libcurl-7.9.8.
+Hopefully this will be fixed in a future release.
+
+Also note the above problems with the USE_INTERNAL_VARS interface.
+
+=head1 AUTHOR
+
+Version 2.00 of WWW::Curl::easy is a renaming of the previous version (named Curl::easy),
+to follow CPAN naming guidelines, by Cris Bailiff.
+
+Versions 1.30, a (hopefully) threadable, object-oriented, multiple-callback compatible
+version of Curl::easy was substantially reworked from the previous Curl::easy
+release (1.21) by Cris Bailiff.
+
+Original Author Georg Horn <horn@koblenz-net.de>, with additional callback, pod
+and test work by Cris Bailiff <c.bailiff+curl@devsecure.com> and Forrest Cahoon
+<forrest.cahoon@merrillcorp.com>
+
+Currently maintained by Cris Bailiff <c.bailiff+curl@devsecure.com>
+
+=head1 Copyright
+
+Copyright (C) 2000,2001,2002,2003 Daniel Stenberg, Cris Bailiff, et al.
+ 
+You may opt to use, copy, modify, merge, publish, distribute and/or sell
+copies of the Software, and permit persons to whom the Software is furnished
+to do so, under the terms of the MPL or the MIT/X-derivate licenses. You may
+pick one of these licenses.
+
+=head1 SEE ALSO
+
+http://curl.haxx.se/
+
+

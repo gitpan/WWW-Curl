@@ -1,0 +1,3 @@
+TYPEMAP
+WWW::Curl::easy T_PTROBJ
+WWW::Curl::form T_PTROBJ

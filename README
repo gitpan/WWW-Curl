@@ -1,0 +1,59 @@
+README for Perl extension WWW::Curl::easy.
+
+The perl module WWW::Curl::easy provides an interface to the cURL library "libcurl".
+See http://curl.haxx.se/ for more information on cURL and libcurl.
+
+This module requires libcurl and the corresponding headerfiles to be
+installed. You then may install this module via the usual way:
+
+    perl Makefile.PL
+    make
+    make test # see note below
+    make install
+
+The Makefile.PL script will try to use the 'curl-config' command to find
+the correct headers and libcurl path. If curl.h can't be found,
+either through curl-config or the internal list of guesses, you can specify
+an explicit path when building the Makefile:
+
+    perl Makefile.PL /home/foo/curl/include
+
+The maintainer has never tried to run this on windows, so all feedback welcome.
+
+Testing:
+ 
+'make test' will only run if you have a suitable test web server somewhere - 
+the 'printenv' script commonly distributed with apache on linux is useable, for
+example.  You need to set the environment variable CURL_TEST_URL to the URL
+of such a script for 'make test' to work automatically.
+
+Test 08ssl.t will only work properly if you have a list of well
+known CA certificates in the file 'ca-bundle.crt' in the current directory.
+This file can be obtained from most distributions of mod_ssl (www.modssl.org) -
+it isn't supplied here, as its currently >250Kbytes.
+
+The module provides the same functionality as libcurl provides to C programs,
+please refer to the documentation of libcurl. A number of examples may be
+found in t/*.t and examples/ directories.
+
+This software is distributed AS IS, WITHOUT WARRANTY OF ANY KIND, either
+express or implied. Send praise, patches, money, beer and pizza to the author.
+Send complaints to /dev/null. ;-)
+
+The original author of this software is Georg Horn <horn@koblenz-net.de>
+
+Parts of the callback support have been added Forrest Cahoon
+<forrest.cahoon@merrillcorp.com>
+
+More callback support, many tests additional documentation and Makefile
+features have been added by Cris Bailiff <c.bailiff+curl@devsecure.com>
+
+The current maintainer is Cris Bailiff <c.bailiff+curl@devsecure.com>
+
+The latest version can be downloaded from http://curl.haxx.se/libcurl/perl/
+ 
+Copyright (C) 2000, Daniel Stenberg, , et al.  
+You may opt to use, copy, modify, merge, publish, distribute and/or sell
+copies of the Software, and permit persons to whom the Software is
+furnished to do so, under the terms of the MPL or the MIT/X-derivate 
+licenses. You may pick one of these licenses.                                             
