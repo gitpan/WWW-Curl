@@ -1,18 +1,14 @@
-#
-# $Id: Curl.pm,v 1.3 2003/04/22 13:39:26 crisb Exp $
-#
-
 package WWW::Curl;
 
 use strict;
 use vars qw(@ISA $VERSION);
 use DynaLoader;
 
-@ISA = qw(DynaLoader);
-
-$VERSION = '2.0';
-
-bootstrap WWW::Curl $VERSION;
+BEGIN {
+    $VERSION = '3.02';
+    @ISA     = qw(DynaLoader);
+    __PACKAGE__->bootstrap;
+}
 
 1;
 
@@ -26,22 +22,31 @@ WWW::Curl - Perl extension interface for libcurl
 
 =head1 SYNOPSIS
 
-	use WWW::Curl::easy;
+    use WWW::Curl;
+    print $WWW::Curl::VERSION;
 
 =head1 DESCRIPTION
 
-This module is a namespace placeholder for a future high level perl-oriented interface to
-libcurl. Currently, you need to use the direct libcurl 'easy' interface, by
-using the 'WWW::Curl::easy' module.
- 
+WWW::Curl is a Perl extension interface for libcurl.
+See WWW::Curl::Easy and WWW::Curl::Multi for more documentation.
+
 =head1 AUTHOR
 
-Version 2.00 of WWW::Curl::easy is a renaming of the previous version, named Curl::easy,
-(also with additional features) to follow CPAN naming guidelines, by Cris Bailiff.
+Version 3.02 adds some backwards compatibility for scripts still using
+'WWW::Curl::easy' names.
 
-=head1 Copyright
+Version 3.00 adds WWW::Curl::Multi interface, and a new module names
+following perl conventions (WWW::Curl::Easy rather than WWW::Curl::easy),
+by Sebastian Riedel <sri@cpan.org>
 
-Copyright (C) 2003 Cris Bailiff
+Version 2.00 of WWW::Curl::easy is a renaming of the previous version
+(named Curl::easy), to follow CPAN naming guidelines, by Cris Bailiff.
+
+Currently maintained by Cris Bailiff <c.bailiff+curl at devsecure.com>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2003,2004,2005 Cris Bailiff
  
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is furnished
@@ -50,4 +55,4 @@ pick one of these licenses.
 
 =head1 SEE ALSO
 
-http://curl.haxx.se/
+WWW::Curl::Easy, WWW::Curl::Multi, http://curl.haxx.se

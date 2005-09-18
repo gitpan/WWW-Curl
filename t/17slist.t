@@ -1,58 +1,48 @@
-# Test script for Perl extension WWW::Curl::easy.
-# Check out the file README for more info.
-
-# Before `make install' is performed this script should be runnable with
-# `make t/thisfile.t'. After `make install' it should work as `perl thisfile.t'
+#!perl
 
 ######################### We start with some black magic to print on failure.
 
 # Change 1..1 below to 1..last_test_to_print .
 use strict;
 
-use WWW::Curl::easy;
+use WWW::Curl::Easy;
 
 ######################### End of black magic.
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
+my $count=0;
 
-my $count=1;
+use ExtUtils::MakeMaker qw(prompt);
 
-# Read URL to get
-my $defurl = "http://localhost/cgi-bin/printenv";
-my $url;
-if (defined ($ENV{CURL_TEST_URL})) {
-	$url=$ENV{CURL_TEST_URL};
-} else {
-$url = "";
-print "Please enter an URL to fetch [$defurl]: ";
-$url = <STDIN>;
-if ($url =~ /^\s*\n/) {
-    $url = $defurl;
-}
+# Read URL to get, defaulting to environment variable if supplied
+my $defurl=$ENV{CURL_TEST_URL} || "";
+my $url = prompt("# Please enter an URL to fetch",$defurl);
+if (!$url) {
+    print "1..0 # No test URL supplied - skipping test\n";
+    exit;
 }
 
 # we need the real printenv cgi for these tests, so skip if
-# our test URL is not a printenv
+# our test URL is not a printenv variant (or test.cgi from
+# mdk apache2). We basically need something which will echo
+# back sent headers in the output
 #
 
-if ($url !~ m/printenv/) {
-	print "1..1\nok 1\n";
+
+if ($url !~ m/printenv|test.cgi/) {
+	print "1..0 # need a real 'printenv' cgi script for this test";
 	exit;
 }
-print "1..6\n";
+print "1..5\n";
 
 
 # Init the curl session
-my $curl = WWW::Curl::easy->new();
+my $curl = WWW::Curl::Easy->new();
 if ($curl == 0) {
     print "not ";
 }
 print "ok ".++$count."\n";
 
 $curl->setopt(CURLOPT_NOPROGRESS, 1);
-$curl->setopt(CURLOPT_MUTE, 1);
 $curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
@@ -86,7 +76,7 @@ $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders);
 # Go get it
 my $retcode=$curl->perform();
 if ($retcode == 0) {
-	if ($body !~ m/FOO="bar"/) {            
+	if ($body !~ m/FOO\s*=\s*"?bar"?/) {            
 		print "not ";
 	}
 } else {

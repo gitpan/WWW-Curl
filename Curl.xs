@@ -18,6 +18,11 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 
+/* Multi only available since 7.9.6 */
+#if (LIBCURL_VERSION_NUM>0x070905)
+#include <curl/multi.h>
+#endif
+
 #if (LIBCURL_VERSION_NUM<0x070702)
 #define CURLOPT_HEADERFUNCTION 20079
 #define header_callback_func write_callback_func
@@ -41,6 +46,7 @@ typedef enum {
     SLIST_LAST
 } perl_curl_easy_slist_code;
 
+
 typedef struct {
     /* The main curl handle */
     struct CURL *curl;
@@ -54,86 +60,91 @@ typedef struct {
     char errbuf[CURL_ERROR_SIZE+1];
     char *errbufvarname;
 
-#ifdef WITH_INTERNAL_VARS
-#define USE_INTERNAL_VARS 0x01
-    /* Internal content storing */
-    char *contbuf;
-    char *bufptr;
-    size_t bufsize;
-    size_t contlen;
-    int internal_options;
-#endif
-
 } perl_curl_easy;
 
-#if LIBCURL_VERSION_NUM >= 0x070900
+
 typedef struct {
+#if LIBCURL_VERSION_NUM >= 0x070900
     struct HttpPost * post;
     struct HttpPost * last;
-} perl_curl_form;
 #else
-typedef struct {
     void * post;
     void * last;
-} perl_curl_form;
 #endif
+} perl_curl_form;
+
+
+typedef struct {
+#ifdef __CURL_MULTI_H
+    struct CURLM *curlm;
+#else
+    struct void *curlm;
+#endif
+} perl_curl_multi;
+
 
 /* switch from curl option codes to the relevant callback index */
-static perl_curl_easy_callback_code callback_index(int option) {
+static perl_curl_easy_callback_code callback_index(int option)
+{
     switch(option) {
-	case CURLOPT_WRITEFUNCTION:
-	case CURLOPT_FILE:
-	    return CALLBACK_WRITE;
-	    break;
+        case CURLOPT_WRITEFUNCTION:
+        case CURLOPT_FILE:
+            return CALLBACK_WRITE;
+            break;
 
-	case CURLOPT_READFUNCTION:
-	case CURLOPT_INFILE:
-	    return CALLBACK_READ;
-	    break;
+        case CURLOPT_READFUNCTION:
+        case CURLOPT_INFILE:
+            return CALLBACK_READ;
+            break;
 
-	case CURLOPT_HEADERFUNCTION:
-	case CURLOPT_WRITEHEADER:
-	    return CALLBACK_HEADER;
-	    break;
+        case CURLOPT_HEADERFUNCTION:
+        case CURLOPT_WRITEHEADER:
+            return CALLBACK_HEADER;
+            break;
 
-	case CURLOPT_PROGRESSFUNCTION:
-	case CURLOPT_PROGRESSDATA:
-	    return CALLBACK_PROGRESS;
-	    break;
+        case CURLOPT_PROGRESSFUNCTION:
+        case CURLOPT_PROGRESSDATA:
+            return CALLBACK_PROGRESS;
+            break;
 
-	case CURLOPT_PASSWDFUNCTION:
-	case CURLOPT_PASSWDDATA:
-	    return CALLBACK_PASSWD;
-	    break;
+/* PASSWD callback dropped in 7.10.8 */
+#if (LIBCURL_VERSION_NUM<0x070A08)
+
+        case CURLOPT_PASSWDFUNCTION:
+        case CURLOPT_PASSWDDATA:
+           return CALLBACK_PASSWD;
+           break;
+#endif
+
     }
     croak("Bad callback index requested\n");
     return CALLBACK_LAST;
 }
 
 /* switch from curl slist names to an slist index */
-static perl_curl_easy_slist_code slist_index(int option) {
+static perl_curl_easy_slist_code slist_index(int option)
+{
     switch(option) {
-	case CURLOPT_HTTPHEADER:
-	    return SLIST_HTTPHEADER;
-	    break;
-	case CURLOPT_QUOTE:
-	    return SLIST_QUOTE;
-	    break;
-	case CURLOPT_POSTQUOTE:
-	    return SLIST_POSTQUOTE;
-	    break;
+        case CURLOPT_HTTPHEADER:
+            return SLIST_HTTPHEADER;
+            break;
+        case CURLOPT_QUOTE:
+            return SLIST_QUOTE;
+            break;
+        case CURLOPT_POSTQUOTE:
+            return SLIST_POSTQUOTE;
+            break;
     }
     croak("Bad slist index requested\n");
     return SLIST_LAST;
 }
 
-/* Setup these global vars */
 static perl_curl_easy * perl_curl_easy_new()
 {
     perl_curl_easy *self;
     Newz(1, self, 1, perl_curl_easy);
     if (!self)
-	croak("out of memory");
+        croak("out of memory");
     self->curl=curl_easy_init();
     return self;
 }
@@ -143,7 +154,7 @@ static perl_curl_easy * perl_curl_easy_duphandle(perl_curl_easy *orig)
     perl_curl_easy *self;
     Newz(1, self, 1, perl_curl_easy);
     if (!self)
-	croak("out of memory");
+        croak("out of memory");
     self->curl=curl_easy_duphandle(orig->curl);
     return self;
 }
@@ -155,15 +166,11 @@ static void perl_curl_easy_delete(perl_curl_easy *self)
         curl_easy_cleanup(self->curl);
 
     for (index=0;index<SLIST_LAST;index++) {
-	if (self->slist[index]) curl_slist_free_all(self->slist[index]);
+        if (self->slist[index]) curl_slist_free_all(self->slist[index]);
     };
 
-    if (self->errbufvarname) free(self->errbufvarname);
-
-#ifdef WITH_INTERNAL_VARS
-    if (self->contbuf) free(self->contbuf);
-    self->bufptr = self->contbuf = NULL;
-#endif
+    if (self->errbufvarname)
+        free(self->errbufvarname);
 
     Safefree(self);
 
@@ -175,18 +182,19 @@ static void perl_curl_easy_register_callback(perl_curl_easy *self, SV **callback
 {
     /* FIXME: need to check the ref-counts here */
     if (*callback == NULL) {
-	*callback = newSVsv(function);
+        *callback = newSVsv(function);
     } else {
-	SvSetSV(*callback, function);
+        SvSetSV(*callback, function);
     }
 }
 
+/* start of form functions - very un-finished! */
 static perl_curl_form * perl_curl_form_new()
 {
     perl_curl_form *self;
     Newz(1, self, 1, perl_curl_form);
     if (!self)
-	croak("out of memory");
+        croak("out of memory");
     self->post=NULL;
     self->last=NULL;
     return self;
@@ -194,81 +202,112 @@ static perl_curl_form * perl_curl_form_new()
 
 static void perl_curl_form_delete(perl_curl_form *self)
 {
-#if LIBCURL_VERSION_NUM >= 0x070900
+#if 0
+#if (LIBCURL_VERSION_NUM >= 0x070900)
     if (self->post) {
-	curl_formfree(self->post);
+        curl_formfree(self->post);
     }
+#endif
 #endif
     Safefree(self);
 }
 
+/* make a new multi */
+static perl_curl_multi * perl_curl_multi_new()
+{
+    perl_curl_multi *self;
+    Newz(1, self, 1, perl_curl_multi);
+    if (!self)
+        croak("out of memory");
+#ifdef __CURL_MULTI_H
+    self->curlm=curl_multi_init();
+#else
+    croak("curl version too old to support curl_multi_init()");
+#endif
+    return self;
+}
+
+/* delete the multi */
+static void perl_curl_multi_delete(perl_curl_multi *self)
+{
+#ifdef __CURL_MULTI_H
+    if (self->curlm) 
+        curl_multi_cleanup(self->curlm);
+    Safefree(self);
+#endif
+
+}
+
+
 /* generic fwrite callback, which decides which callback to call */
 static size_t
-fwrite_wrapper (const void *ptr,
-		size_t size,
-		size_t nmemb,
-		perl_curl_easy *self,
-		void *call_function,
-		void *call_ctx)
+fwrite_wrapper (
+    const void *ptr,
+    size_t size,
+    size_t nmemb,
+    perl_curl_easy *self,
+    void *call_function,
+    void *call_ctx)
 {
     dSP;
 
     if (call_function) { /* We are doing a callback to perl */
-	int count, status;
-	SV *sv;
+        int count, status;
+        SV *sv;
 
-	ENTER;
-	SAVETMPS;
+        ENTER;
+        SAVETMPS;
 
-	PUSHMARK(SP);
+        PUSHMARK(SP);
 
-	if (ptr) {
-	    XPUSHs(sv_2mortal(newSVpvn((char *)ptr, (STRLEN)(size * nmemb))));
-	} else { /* just in case */
-	    XPUSHs(&PL_sv_undef);
-	}
+        if (ptr) {
+            XPUSHs(sv_2mortal(newSVpvn((char *)ptr, (STRLEN)(size * nmemb))));
+        } else { /* just in case */
+            XPUSHs(&PL_sv_undef);
+        }
 
-	if (call_ctx) {
-	    XPUSHs(sv_2mortal(newSVsv(call_ctx)));
+        if (call_ctx) {
+            XPUSHs(sv_2mortal(newSVsv(call_ctx)));
         } else { /* should be a stdio glob ? */
-	    XPUSHs(&PL_sv_undef);
-	}
+           XPUSHs(&PL_sv_undef);
+        }
 
-	PUTBACK;
-	count = perl_call_sv((SV *) call_function, G_SCALAR);
-	SPAGAIN;
+        PUTBACK;
+        count = perl_call_sv((SV *) call_function, G_SCALAR);
+        SPAGAIN;
 
-	if (count != 1)
+        if (count != 1)
             croak("callback for CURLOPT_WRITEFUNCTION didn't return a status\n");
 
-	status = POPi;
+        status = POPi;
 
-	PUTBACK;
-	FREETMPS;
-	LEAVE;
-	return status;
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+        return status;
 
     } else {
-	/* perform write directly, via PerlIO */
+   /* perform write directly, via PerlIO */
 
-	PerlIO *handle;
-	if (call_ctx) { /* Assume the context is a GLOB */
-	    handle = IoOFP(sv_2io(call_ctx));
-	} else { /* punt to stdout */
-	    handle = PerlIO_stdout();
-	}
-	return PerlIO_write(handle,ptr,size*nmemb);
+        PerlIO *handle;
+        if (call_ctx) { /* Assume the context is a GLOB */
+            handle = IoOFP(sv_2io(call_ctx));
+        
+        } else { /* punt to stdout */
+           handle = PerlIO_stdout();
+        }
+           return PerlIO_write(handle,ptr,size*nmemb);
     }
 }
 
 /* Write callback for calling a perl callback */
 size_t
-write_callback_func( const void *ptr, size_t size, size_t nmemb, void *stream)
+write_callback_func(const void *ptr, size_t size, size_t nmemb, void *stream)
 {
     perl_curl_easy *self;
     self=(perl_curl_easy *)stream;
     return fwrite_wrapper(ptr,size,nmemb,self,
-        self->callback[CALLBACK_WRITE],self->callback_ctx[CALLBACK_WRITE]);
+            self->callback[CALLBACK_WRITE],self->callback_ctx[CALLBACK_WRITE]);
 }
 
 /* header callback for calling a perl callback */
@@ -279,7 +318,7 @@ writeheader_callback_func(const void *ptr, size_t size, size_t nmemb, void *stre
     self=(perl_curl_easy *)stream;
 
     return fwrite_wrapper(ptr,size,nmemb,self,
-        self->callback[CALLBACK_HEADER],self->callback_ctx[CALLBACK_HEADER]);
+            self->callback[CALLBACK_HEADER],self->callback_ctx[CALLBACK_HEADER]);
 }
 
 /* read callback for calling a perl callback */
@@ -295,22 +334,22 @@ read_callback_func( void *ptr, size_t size, size_t nmemb, void *stream)
     maxlen = size*nmemb;
 
     if (self->callback[CALLBACK_READ]) { /* We are doing a callback to perl */
-	char *data;
-	int count;
-	SV *sv;
-	STRLEN len;
+        char *data;
+        int count;
+        SV *sv;
+        STRLEN len;
 
         ENTER ;
         SAVETMPS ;
  
         PUSHMARK(SP) ;
 
-	if (self->callback_ctx[CALLBACK_READ]) {
+        if (self->callback_ctx[CALLBACK_READ]) {
             sv = self->callback_ctx[CALLBACK_READ];
         } else {
             sv = &PL_sv_undef;
         }
-	
+
         XPUSHs(sv_2mortal(newSViv(maxlen)));
         XPUSHs(sv_2mortal(newSVsv(sv)));
 
@@ -335,14 +374,14 @@ read_callback_func( void *ptr, size_t size, size_t nmemb, void *stream)
         return (size_t) (len/size);
 
     } else {
-	/* read input directly */
-	PerlIO *f;
-	if (self->callback_ctx[CALLBACK_READ]) { /* hope its a GLOB! */
-	    f = IoIFP(sv_2io(self->callback_ctx[CALLBACK_READ]));
-	} else { /* punt to stdin */
-	    f = PerlIO_stdin();
-	}
-	return PerlIO_read(f,ptr,maxlen);
+        /* read input directly */
+        PerlIO *f;
+        if (self->callback_ctx[CALLBACK_READ]) { /* hope its a GLOB! */
+            f = IoIFP(sv_2io(self->callback_ctx[CALLBACK_READ]));
+        } else { /* punt to stdin */
+           f = PerlIO_stdin();
+        }
+       return PerlIO_read(f,ptr,maxlen);
     }
 }
 
@@ -361,9 +400,9 @@ static int progress_callback_func(void *clientp, double dltotal, double dlnow,
     SAVETMPS;
     PUSHMARK(sp);
     if (self->callback_ctx[CALLBACK_PROGRESS]) {
-	XPUSHs(sv_2mortal(newSVsv(self->callback_ctx[CALLBACK_PROGRESS])));
+        XPUSHs(sv_2mortal(newSVsv(self->callback_ctx[CALLBACK_PROGRESS])));
     } else {
-	XPUSHs(&PL_sv_undef);
+        XPUSHs(&PL_sv_undef);
     }
     XPUSHs(sv_2mortal(newSVnv(dltotal)));
     XPUSHs(sv_2mortal(newSVnv(dlnow)));
@@ -375,7 +414,7 @@ static int progress_callback_func(void *clientp, double dltotal, double dlnow,
     SPAGAIN;
 
     if (count != 1)
-	croak("callback for CURLOPT_PROGRESSFUNCTION didn't return 1\n");
+        croak("callback for CURLOPT_PROGRESSFUNCTION didn't return 1\n");
 
     count = POPi;
 
@@ -405,7 +444,7 @@ static int passwd_callback_func(void *clientp, char *prompt, char *buffer, int b
     if (self->callback_ctx[CALLBACK_PASSWD]) {
         XPUSHs(sv_2mortal(newSVsv(self->callback_ctx[CALLBACK_PASSWD])));
     } else {
-	XPUSHs(&PL_sv_undef);
+        XPUSHs(&PL_sv_undef);
     }
     XPUSHs(sv_2mortal(newSVpv(prompt, 0)));
     XPUSHs(sv_2mortal(newSViv(buflen)));
@@ -413,7 +452,7 @@ static int passwd_callback_func(void *clientp, char *prompt, char *buffer, int b
     count = perl_call_sv(self->callback[CALLBACK_PASSWD], G_ARRAY);
     SPAGAIN;
     if (count != 2)
-	croak("callback for CURLOPT_PASSWDFUNCTION didn't return status + data\n");
+        croak("callback for CURLOPT_PASSWDFUNCTION didn't return status + data\n");
 
     sv = POPs;
     count = POPi;
@@ -464,41 +503,15 @@ closepolicy_callback_func(void *clientp)
 }
 #endif
 
-
-/* FIXME: should do this in the perl layer */
-/* Internal write callback. Only used if USE_INTERNAL_VARS was specified */
-
-#ifdef WITH_INTERNAL_VARS
-static size_t internal_write_callback(const void *ptr, size_t size, size_t num, void *stream)
-{
-    perl_curl_easy *self;
-    self=(perl_curl_easy *)stream;
-   
-    size *= num;
-    if ((self->contlen + size) >= self->bufsize) {
-	if (self->bufsize) {
-	    self->bufsize *= 2; /* grow */
-	} else {
-	    self->bufsize = 32768; /* initial size */
-	}
-	self->contbuf = realloc(self->contbuf, self->bufsize + 1);
-	self->bufptr = self->contbuf + self->contlen;
-    }
-    self->contlen += size;
-    memcpy(self->bufptr, ptr, size);
-    self->bufptr += size;
-    *(self->bufptr) = '\0';
-    return size;
-}
-#endif
-
 #include "curlopt-constants.c"
 
-typedef perl_curl_easy * WWW__Curl__easy;
+typedef perl_curl_easy * WWW__Curl__Easy;
 
-typedef perl_curl_form * WWW__Curl__form;
+typedef perl_curl_form * WWW__Curl__Form;
 
-MODULE = WWW::Curl 	PACKAGE = WWW::Curl::easy 	PREFIX = curl_easy_
+typedef perl_curl_multi * WWW__Curl__Multi;
+
+MODULE = WWW::Curl    PACKAGE = WWW::Curl::Easy    PREFIX = curl_easy_
 
 BOOT:
         curl_global_init(CURL_GLOBAL_ALL); /* FIXME: does this need a mutex for ithreads? */
@@ -515,399 +528,435 @@ constant(name,arg)
 void
 curl_easy_init(...)
     ALIAS:
-	new = 1
+        new = 1
     PREINIT:
-	perl_curl_easy *self;
-	char *sclass = "WWW::Curl::easy";
+        perl_curl_easy *self;
+        char *sclass = "WWW::Curl::Easy";
+
     PPCODE:
-    	if (items>0 && !SvROK(ST(0))) {
-	    STRLEN dummy;
-	    sclass = SvPV(ST(0),dummy);
-	}
+        if (items>0 && !SvROK(ST(0))) {
+           STRLEN dummy;
+           sclass = SvPV(ST(0),dummy);
+        }
 
-	self=perl_curl_easy_new(); /* curl handle created by this point */
+        self=perl_curl_easy_new(); /* curl handle created by this point */
 
-	ST(0) = sv_newmortal();
-	sv_setref_pv(ST(0), sclass, (void*)self);
-	SvREADONLY_on(SvRV(ST(0)));
+        ST(0) = sv_newmortal();
+        sv_setref_pv(ST(0), sclass, (void*)self);
+        SvREADONLY_on(SvRV(ST(0)));
 
-	/* configure curl to always callback to the XS interface layer */
-	curl_easy_setopt(self->curl, CURLOPT_WRITEFUNCTION, write_callback_func);
-	curl_easy_setopt(self->curl, CURLOPT_READFUNCTION, read_callback_func);
-	curl_easy_setopt(self->curl, CURLOPT_HEADERFUNCTION, header_callback_func);
-	curl_easy_setopt(self->curl, CURLOPT_PROGRESSFUNCTION, progress_callback_func);
-	curl_easy_setopt(self->curl, CURLOPT_PASSWDFUNCTION, passwd_callback_func);
+        /* configure curl to always callback to the XS interface layer */
+        curl_easy_setopt(self->curl, CURLOPT_WRITEFUNCTION, write_callback_func);
+        curl_easy_setopt(self->curl, CURLOPT_READFUNCTION, read_callback_func);
+        curl_easy_setopt(self->curl, CURLOPT_HEADERFUNCTION, header_callback_func);
+        curl_easy_setopt(self->curl, CURLOPT_PROGRESSFUNCTION, progress_callback_func);
+#if (LIBCURL_VERSION_NUM<0x070A08)
+        curl_easy_setopt(self->curl, CURLOPT_PASSWDFUNCTION, passwd_callback_func);
+#endif
 
-	/* set our own object as the context for all curl callbacks */
-	curl_easy_setopt(self->curl, CURLOPT_FILE, self); 
-	curl_easy_setopt(self->curl, CURLOPT_INFILE, self); 
-	curl_easy_setopt(self->curl, CURLOPT_WRITEHEADER, self); 
-	curl_easy_setopt(self->curl, CURLOPT_PROGRESSDATA, self); 
-	curl_easy_setopt(self->curl, CURLOPT_PASSWDDATA, self); 
+        /* set our own object as the context for all curl callbacks */
+        curl_easy_setopt(self->curl, CURLOPT_FILE, self); 
+        curl_easy_setopt(self->curl, CURLOPT_INFILE, self); 
+        curl_easy_setopt(self->curl, CURLOPT_WRITEHEADER, self); 
+        curl_easy_setopt(self->curl, CURLOPT_PROGRESSDATA, self); 
+#if (LIBCURL_VERSION_NUM<0x070A08)
+        curl_easy_setopt(self->curl, CURLOPT_PASSWDDATA, self); 
+#endif
+        /* we always collect this, in case it's wanted */
+        curl_easy_setopt(self->curl, CURLOPT_ERRORBUFFER, self->errbuf);
 
-	/* we always collect this, in case it's wanted */
-	curl_easy_setopt(self->curl, CURLOPT_ERRORBUFFER, self->errbuf);
-
-	XSRETURN(1);
+        XSRETURN(1);
 
 void
 curl_easy_duphandle(self)
-    WWW::Curl::easy self
+    WWW::Curl::Easy self
     PREINIT:
-	perl_curl_easy *clone;
-	char *sclass = "WWW::Curl::easy";
-	perl_curl_easy_callback_code i;
+        perl_curl_easy *clone;
+        char *sclass = "WWW::Curl::Easy";
+        perl_curl_easy_callback_code i;
+
     PPCODE:
-	clone=perl_curl_easy_duphandle(self);
+        clone=perl_curl_easy_duphandle(self);
 
-	ST(0) = sv_newmortal();
-	sv_setref_pv(ST(0), sclass, (void*)clone);
-	SvREADONLY_on(SvRV(ST(0)));
+        ST(0) = sv_newmortal();
+        sv_setref_pv(ST(0), sclass, (void*)clone);
+        SvREADONLY_on(SvRV(ST(0)));
 
-	/* configure curl to always callback to the XS interface layer */
-	/*
-	 * FIXME: This needs more testing before turning on... 
-	 
-	curl_easy_setopt(clone->curl, CURLOPT_WRITEFUNCTION, write_callback_func);
-	curl_easy_setopt(clone->curl, CURLOPT_READFUNCTION, read_callback_func);
-	curl_easy_setopt(clone->curl, CURLOPT_HEADERFUNCTION, header_callback_func);
-	curl_easy_setopt(clone->curl, CURLOPT_PROGRESSFUNCTION, progress_callback_func);
-	curl_easy_setopt(clone->curl, CURLOPT_PASSWDFUNCTION, passwd_callback_func);
-	*/
+        /* configure curl to always callback to the XS interface layer */
+        /*
+         * FIXME: This needs more testing before turning on... 
 
-	/* set our own object as the context for all curl callbacks */
-	curl_easy_setopt(clone->curl, CURLOPT_FILE, clone); 
-	curl_easy_setopt(clone->curl, CURLOPT_INFILE, clone); 
-	curl_easy_setopt(clone->curl, CURLOPT_WRITEHEADER, clone); 
-	curl_easy_setopt(clone->curl, CURLOPT_PROGRESSDATA, clone); 
-	curl_easy_setopt(clone->curl, CURLOPT_PASSWDDATA, clone); 
+        curl_easy_setopt(clone->curl, CURLOPT_WRITEFUNCTION, write_callback_func);
+        curl_easy_setopt(clone->curl, CURLOPT_READFUNCTION, read_callback_func);
+        curl_easy_setopt(clone->curl, CURLOPT_HEADERFUNCTION, header_callback_func);
+        curl_easy_setopt(clone->curl, CURLOPT_PROGRESSFUNCTION, progress_callback_func);
+        curl_easy_setopt(clone->curl, CURLOPT_PASSWDFUNCTION, passwd_callback_func);
+        */
 
-	/* we always collect this, in case it's wanted */
-	curl_easy_setopt(clone->curl, CURLOPT_ERRORBUFFER, clone->errbuf);
+        /* set our own object as the context for all curl callbacks */
+        curl_easy_setopt(clone->curl, CURLOPT_FILE, clone); 
+        curl_easy_setopt(clone->curl, CURLOPT_INFILE, clone); 
+        curl_easy_setopt(clone->curl, CURLOPT_WRITEHEADER, clone); 
+        curl_easy_setopt(clone->curl, CURLOPT_PROGRESSDATA, clone); 
+#if (LIBCURL_VERSION_NUM<0x070A08)
+        curl_easy_setopt(clone->curl, CURLOPT_PASSWDDATA, clone); 
+#endif
+        /* we always collect this, in case it's wanted */
+        curl_easy_setopt(clone->curl, CURLOPT_ERRORBUFFER, clone->errbuf);
 
-	for(i=0;i<CALLBACK_LAST;i++) {
-	    clone->callback[i]=self->callback[i]; 
-	    clone->callback_ctx[i]=self->callback_ctx[i]; 
-	     /*
-	      * FIXME: 
-    	    perl_curl_easy_register_callback(clone,&(clone->callback[i]), self->callback[i]);
-    	    perl_curl_easy_register_callback(clone,&(clone->callback_ctx[i]), self->callback_ctx[i]);
-	    */
-	};
+        for(i=0;i<CALLBACK_LAST;i++) {
+            clone->callback[i]=self->callback[i]; 
+            clone->callback_ctx[i]=self->callback_ctx[i]; 
+        /*
+         * FIXME: 
+           perl_curl_easy_register_callback(clone,&(clone->callback[i]), self->callback[i]);
+           perl_curl_easy_register_callback(clone,&(clone->callback_ctx[i]), self->callback_ctx[i]);
+       */
+        };
 
-	XSRETURN(1);
+        XSRETURN(1);
 
 char *
 curl_easy_version(...)
     CODE:
-	RETVAL=curl_version();
+        RETVAL=curl_version();
     OUTPUT:
-	RETVAL
+        RETVAL
 
 int
 curl_easy_setopt(self, option, value)
-	WWW::Curl::easy self
-	int option
-	SV * value
+        WWW::Curl::Easy self
+        int option
+        SV * value
     CODE:
-	RETVAL=CURLE_OK;
-	switch(option) {
-	/* SV * to user contexts for callbacks - any SV (glob,scalar,ref) */
-	case CURLOPT_FILE:
-	case CURLOPT_INFILE:
-	case CURLOPT_WRITEHEADER:
-	case CURLOPT_PROGRESSDATA:
-	case CURLOPT_PASSWDDATA:
-	    perl_curl_easy_register_callback(self,&(self->callback_ctx[callback_index(option)]),value);
-	    break;
+        RETVAL=CURLE_OK;
+        switch(option) {
+            /* SV * to user contexts for callbacks - any SV (glob,scalar,ref) */
+            case CURLOPT_FILE:
+            case CURLOPT_INFILE:
+            case CURLOPT_WRITEHEADER:
+            case CURLOPT_PROGRESSDATA:
+#if (LIBCURL_VERSION_NUM<0x070A08)
+            case CURLOPT_PASSWDDATA:
+#endif
+                perl_curl_easy_register_callback(self,
+                        &(self->callback_ctx[callback_index(option)]),value);
+                break;
 
-	/* SV * to a subroutine ref */
-	case CURLOPT_WRITEFUNCTION:
-	case CURLOPT_READFUNCTION:
-        case CURLOPT_HEADERFUNCTION:
-	case CURLOPT_PROGRESSFUNCTION:
-	case CURLOPT_PASSWDFUNCTION:
-	    perl_curl_easy_register_callback(self,&(self->callback[callback_index(option)]),value);
-	    break;
+            /* SV * to a subroutine ref */
+            case CURLOPT_WRITEFUNCTION:
+            case CURLOPT_READFUNCTION:
+            case CURLOPT_HEADERFUNCTION:
+            case CURLOPT_PROGRESSFUNCTION:
+#if (LIBCURL_VERSION_NUM<0x070A08)
+            case CURLOPT_PASSWDFUNCTION:
+#endif
+               perl_curl_easy_register_callback(self,
+                       &(self->callback[callback_index(option)]),value);
+               break;
 
-	/* slist cases */
-	case CURLOPT_HTTPHEADER:
-	case CURLOPT_QUOTE:
-	case CURLOPT_POSTQUOTE:
-	    {
-		/* This is an option specifying a list, which we put in a curl_slist struct */
-		AV *array = (AV *)SvRV(value);
-		struct curl_slist **slist = NULL;
-		int last = av_len(array);
-		int i;
+            /* slist cases */
+            case CURLOPT_HTTPHEADER:
+            case CURLOPT_QUOTE:
+            case CURLOPT_POSTQUOTE:
+            {
+                /* This is an option specifying a list, which we put in a curl_slist struct */
+                AV *array = (AV *)SvRV(value);
+                struct curl_slist **slist = NULL;
+                int last = av_len(array);
+                int i;
 
-		/* We have to find out which list to use... */
-		slist = &(self->slist[slist_index(option)]);
+                /* We have to find out which list to use... */
+                slist = &(self->slist[slist_index(option)]);
 
-		/* free any previous list */
-		if (*slist) {
-		    curl_slist_free_all(*slist);
-		    *slist=NULL;
-		}                                                                       
-		/* copy perl values into this slist */
-		for (i=0;i<=last;i++) {
-		    SV **sv = av_fetch(array,i,0);
-		    int len = 0;
-		    char *string = SvPV(*sv, len);
-		    if (len == 0) /* FIXME: is this correct? */
-			break;
-		    *slist = curl_slist_append(*slist, string);
-		}
-		/* pass the list into curl_easy_setopt() */
-		RETVAL = curl_easy_setopt(self->curl, option, *slist);
-	    };
-	    break;
+                /* free any previous list */
+                if (*slist) {
+                    curl_slist_free_all(*slist);
+                    *slist=NULL;
+                }                                                                       
+                /* copy perl values into this slist */
+                for (i=0;i<=last;i++) {
+                    SV **sv = av_fetch(array,i,0);
+                    int len = 0;
+                    char *string = SvPV(*sv, len);
+                    if (len == 0) /* FIXME: is this correct? */
+                        break;
+                    *slist = curl_slist_append(*slist, string);
+                }
+                /* pass the list into curl_easy_setopt() */
+                RETVAL = curl_easy_setopt(self->curl, option, *slist);
+            };
+            break;
 
-	/* Pass in variable name for storing error messages. Yuck. */
-	case CURLOPT_ERRORBUFFER:
-	    {
-		STRLEN dummy;
-		if (self->errbufvarname) free(self->errbufvarname);
-		self->errbufvarname = strdup((char *)SvPV(value, dummy));
-	    };
-	    break;
+            /* Pass in variable name for storing error messages. Yuck. */
+            case CURLOPT_ERRORBUFFER:
+            {
+                STRLEN dummy;
+                if (self->errbufvarname)
+                    free(self->errbufvarname);
+                self->errbufvarname = strdup((char *)SvPV(value, dummy));
+            };
+            break;
 
-        /* tell curl to redirect STDERR - value should be a glob */
-	case CURLOPT_STDERR:
-	    RETVAL = curl_easy_setopt(self->curl, option, IoOFP(sv_2io(value)) );
-	    break;
+            /* tell curl to redirect STDERR - value should be a glob */
+            case CURLOPT_STDERR:
+                RETVAL = curl_easy_setopt(self->curl, option, IoOFP(sv_2io(value)) );
+                break;
 
-	/* not working yet...
-	case CURLOPT_HTTPPOST:
-	    if (sv_derived_from(value, "WWW::Curl::form")) {
-		WWW__Curl__form wrapper;
-		IV tmp = SvIV((SV*)SvRV(value));
-		wrapper = INT2PTR(WWW__Curl__form,tmp);
-		RETVAL = curl_easy_setopt(self->curl, option, wrapper->post);
-	    } else
-		croak("value is not of type WWW::Curl::form"); 
-	    break;
-        */
+            /* not working yet...
+            case CURLOPT_HTTPPOST:
+                if (sv_derived_from(value, "WWW::Curl::Form")) {
+                    WWW__Curl__form wrapper;
+                    IV tmp = SvIV((SV*)SvRV(value));
+                    wrapper = INT2PTR(WWW__Curl__form,tmp);
+                    RETVAL = curl_easy_setopt(self->curl, option, wrapper->post);
+                } else
+                    croak("value is not of type WWW::Curl::Form"); 
+                break;
+            */
 
-	/* default cases */
-	default:
-	    if (option < CURLOPTTYPE_OBJECTPOINT) { /* An integer value: */
-		RETVAL = curl_easy_setopt(self->curl, option, (long)SvIV(value));
-	    } else { /* A char * value: */
-		/* FIXME: Does curl really want NULL for empty stings? */
-		STRLEN dummy;
-		char *pv = SvPV(value, dummy);
-		RETVAL = curl_easy_setopt(self->curl, option, *pv ? pv : NULL);
-	    };
-	    break;
-	};
+            /* default cases */
+            default:
+                if (option < CURLOPTTYPE_OBJECTPOINT) { /* An integer value: */
+                    RETVAL = curl_easy_setopt(self->curl, option, (long)SvIV(value));
+                } else { /* A char * value: */
+                    /* FIXME: Does curl really want NULL for empty strings? */
+                    STRLEN dummy;
+                    char *pv = SvPV(value, dummy);
+                    RETVAL = curl_easy_setopt(self->curl, option, *pv ? pv : NULL);
+                };
+                break;
+        };
     OUTPUT:
-	RETVAL
+        RETVAL
 
 int
 internal_setopt(self, option, value)
-	WWW::Curl::easy self
-	int option
-	int value
+    WWW::Curl::Easy self
+    int option
+    int value
     CODE:
-#ifdef WITH_INTERNAL_VARS
-	if (value == 1) {
-	    self->internal_options |= option;
-	} else {
-	    self->internal_options &= !option;
-	}
-#else
-	croak("internal_setopt deprecated - recompile with -DWITH_INTERNAL_VARS for support\n");
-#endif
-	RETVAL = 0;
+        croak("internal_setopt no longer supported - use a callback\n");
+        RETVAL = 0;
     OUTPUT:
-	RETVAL
+       RETVAL
 
 int
 curl_easy_perform(self)
-	WWW::Curl::easy self
+    WWW::Curl::Easy self
     CODE:
-	/* perform the actual curl fetch */
-#ifdef WITH_INTERNAL_VARS
-	if (self->internal_options & USE_INTERNAL_VARS) {
-	    /* Use internal callback which just stores the content into a buffer. */
-	    self->bufptr = self->contbuf;
-	    self->contlen = 0;
-	    curl_easy_setopt(self->curl, CURLOPT_WRITEFUNCTION, internal_write_callback);
-	    curl_easy_setopt(self->curl, CURLOPT_HEADER, 1);
-	}
-#endif
-	RETVAL = curl_easy_perform(self->curl);
+        /* perform the actual curl fetch */
+        RETVAL = curl_easy_perform(self->curl);
 
-	if (RETVAL && self->errbufvarname) {
-	    /* If an error occurred and a varname for error messages has been
-	       specified, store the error message. */
-	    SV *sv = perl_get_sv(self->errbufvarname, TRUE | GV_ADDMULTI);
-	    sv_setpv(sv, self->errbuf);
-	}
-	/* Better to use plain perl for this - should work, but I have no scripts
-	 * using this to test with. */
-#ifdef WITH_INTERNAL_VARS
-	if ((!RETVAL || (RETVAL == CURLE_PARTIAL_FILE)) &&
-	   (self->internal_options & USE_INTERNAL_VARS)) {
-	    /* No error and internal variable for the content are to be used:
-	       Split the data into headers and content and store them into
-	       perl variables. */
-	    /* Note these are globals, and therefore are not safe between handles
-	     * or threads */
-	    SV *head_sv = perl_get_sv("WWW::Curl::easy::headers", TRUE | GV_ADDMULTI);
-	    SV *cont_sv = perl_get_sv("WWW::Curl::easy::content", TRUE | GV_ADDMULTI);
-	    char *p = self->contbuf;
-	    int nl = 0, found = 0;
-	    while (p < self->bufptr) {
-		if (nl && (*p == '\n' || *p == '\r')) {
-		/* found empty line, end of headers */
-		*p++ = '\0';
-		sv_setpv(head_sv, self->contbuf);
-		while (*p == '\n' || *p == '\r') {
-			p++;
-		}
-		sv_setpvn(cont_sv, p, self->bufptr - p);
-		found = 1;
-		break;
-		}
-		nl = (*p == '\n');
-		p++;
-	    }
-	    if (!found) {
-		sv_setpv(head_sv, "");
-		sv_setpvn(cont_sv, self->contbuf, self->contlen);
-	    }
-	}
-	/* reset */
-	self->bufptr = self->contbuf;
-	self->contlen = 0;
-#endif
+    if (RETVAL && self->errbufvarname) {
+        /* If an error occurred and a varname for error messages has been
+          specified, store the error message. */
+        SV *sv = perl_get_sv(self->errbufvarname, TRUE | GV_ADDMULTI);
+        sv_setpv(sv, self->errbuf);
+    }
     OUTPUT:
-	RETVAL
+        RETVAL
 
 
 SV *
 curl_easy_getinfo(self, option, ... )
-	WWW::Curl::easy self
-	int option
+    WWW::Curl::Easy self
+    int option
     CODE:
-	switch (option & CURLINFO_TYPEMASK) {
-	    case CURLINFO_STRING:
-	    {
-		char * vchar;
-		curl_easy_getinfo(self->curl, option, &vchar);
-		RETVAL = newSVpv(vchar,0);
-		break;
-	    }
-	    case CURLINFO_LONG:
-	    {
-		long vlong;
-		curl_easy_getinfo(self->curl, option, &vlong);
-		RETVAL = newSViv(vlong);
-		break;
-	    }
-	    case CURLINFO_DOUBLE:
-	    {
-		double vdouble;
-		curl_easy_getinfo(self->curl, option, &vdouble);
-		RETVAL = newSVnv(vdouble);
-		break;
-	    }
-	    default: {
-		RETVAL = newSViv(CURLE_BAD_FUNCTION_ARGUMENT);
-		break;
-	    }
-	}
-	if (items > 2) 
-	    sv_setsv(ST(2),RETVAL);
+        switch (option & CURLINFO_TYPEMASK) {
+            case CURLINFO_STRING:
+            {
+                char * vchar;
+                curl_easy_getinfo(self->curl, option, &vchar);
+                RETVAL = newSVpv(vchar,0);
+                break;
+            }
+            case CURLINFO_LONG:
+            {
+                long vlong;
+                curl_easy_getinfo(self->curl, option, &vlong);
+                RETVAL = newSViv(vlong);
+                break;
+            }
+            case CURLINFO_DOUBLE:
+            {
+                double vdouble;
+                curl_easy_getinfo(self->curl, option, &vdouble);
+                RETVAL = newSVnv(vdouble);
+                break;
+            }
+            default: {
+                RETVAL = newSViv(CURLE_BAD_FUNCTION_ARGUMENT);
+                break;
+            }
+        }
+        if (items > 2) 
+            sv_setsv(ST(2),RETVAL);
     OUTPUT:
-	RETVAL
+        RETVAL
 
 char *
 curl_easy_errbuf(self)
-	WWW::Curl::easy self
+    WWW::Curl::Easy self
     CODE:
-    	RETVAL = self->errbuf;
+        RETVAL = self->errbuf;
     OUTPUT:
-	RETVAL
+        RETVAL
 
 int
 curl_easy_cleanup(self)
-	WWW::Curl::easy self
+    WWW::Curl::Easy self
     CODE:
-    	/* does nothing anymore - cleanup is automatic when a curl handle goes out of scope */
-	RETVAL = 0;
+       /* does nothing anymore - cleanup is automatic when a curl handle goes out of scope */
+        RETVAL = 0;
     OUTPUT:
-	RETVAL
+        RETVAL
 
 void
 curl_easy_DESTROY(self)
-	WWW::Curl::easy self
+    WWW::Curl::Easy self
     CODE:
         perl_curl_easy_delete(self);
 
 void
 curl_easy_global_cleanup()
     CODE:
-    curl_global_cleanup();
+        curl_global_cleanup();
 
 
-MODULE = WWW::Curl 	PACKAGE = WWW::Curl::form 	PREFIX = curl_form_
+MODULE = WWW::Curl    PACKAGE = WWW::Curl::Form    PREFIX = curl_form_
 
 void
 curl_form_new(...)
     PREINIT:
-	perl_curl_form *self;
-	char *sclass = "WWW::Curl::form";
+        perl_curl_form *self;
+        char *sclass = "WWW::Curl::Form";
     PPCODE:
-	if (items>0 && !SvROK(ST(0))) {
-	    STRLEN dummy;
-	    sclass = SvPV(ST(0),dummy);
-	}
+        if (items>0 && !SvROK(ST(0))) {
+           STRLEN dummy;
+           sclass = SvPV(ST(0),dummy);
+        }
 
-	self=perl_curl_form_new();
+        self=perl_curl_form_new();
 
-	ST(0) = sv_newmortal();
-	sv_setref_pv(ST(0), sclass, (void*)self);
-	SvREADONLY_on(SvRV(ST(0)));
+        ST(0) = sv_newmortal();
+        sv_setref_pv(ST(0), sclass, (void*)self);
+        SvREADONLY_on(SvRV(ST(0)));
 
-	XSRETURN(1);
+        XSRETURN(1);
 
 void
 curl_form_add(self,name,value)
-    WWW::Curl::form self
+    WWW::Curl::Form self
     char *name
     char *value
     CODE:
 #if LIBCURL_VERSION_NUM >= 0x070900
 #if 0
-	curl_formadd(&(self->post),&(self->last),
-		CURLFORM_COPYNAME,name,
-		CURLFORM_COPYCONTENTS,value,
-		CURLFORM_END); 
+        curl_formadd(&(self->post),&(self->last),
+            CURLFORM_COPYNAME,name,
+            CURLFORM_COPYCONTENTS,value,
+            CURLFORM_END); 
 #endif
 #endif
 
 void
 curl_form_addfile(self,filename,description,type)
-    WWW::Curl::form self
+    WWW::Curl::Form self
     char *filename
     char *description
     char *type
     CODE:
 #if LIBCURL_VERSION_NUM >= 0x070900
 #if 0
-	curl_formadd(&(self->post),&(self->last),
-		CURLFORM_FILE,filename,
-		CURLFORM_COPYNAME,description,
-		CURLFORM_CONTENTTYPE,type,
-		CURLFORM_END); 
+        curl_formadd(&(self->post),&(self->last),
+            CURLFORM_FILE,filename,
+            CURLFORM_COPYNAME,description,
+            CURLFORM_CONTENTTYPE,type,
+            CURLFORM_END); 
 #endif
 #endif
 
 void
 curl_form_DESTROY(self)
-	WWW::Curl::form self
+    WWW::Curl::Form self
     CODE:
         perl_curl_form_delete(self);
+
+MODULE = WWW::Curl    PACKAGE = WWW::Curl::Multi    PREFIX = curl_multi_
+
+void
+curl_multi_new(...)
+    PREINIT:
+        perl_curl_multi *self;
+        char *sclass = "WWW::Curl::Multi";
+    PPCODE:
+        if (items>0 && !SvROK(ST(0))) {
+            STRLEN dummy;
+            sclass = SvPV(ST(0),dummy);
+        }
+
+        self=perl_curl_multi_new();
+
+        ST(0) = sv_newmortal();
+        sv_setref_pv(ST(0), sclass, (void*)self);
+        SvREADONLY_on(SvRV(ST(0)));
+
+        XSRETURN(1);
+
+void
+curl_multi_add_handle(curlm, curl)
+    WWW::Curl::Multi curlm
+    WWW::Curl::Easy curl
+    CODE:
+#ifdef __CURL_MULTI_H
+        curl_multi_add_handle(curlm->curlm, curl->curl);
+#endif
+
+void
+curl_multi_remove_handle(curlm, curl)
+    WWW::Curl::Multi curlm
+    WWW::Curl::Easy curl
+    CODE:
+#ifdef __CURL_MULTI_H
+        curl_multi_remove_handle(curlm->curlm, curl->curl);
+#endif
+
+void
+curl_multi_perform(self)
+    WWW::Curl::Multi self
+    CODE:
+#ifdef __CURL_MULTI_H
+        int remaining;
+        while(CURLM_CALL_MULTI_PERFORM ==
+            curl_multi_perform(self->curlm, &remaining));
+        while(remaining) {
+            struct timeval timeout;
+            int rc;
+            fd_set fdread;
+            fd_set fdwrite;
+            fd_set fdexcep;
+            int maxfd;
+            FD_ZERO(&fdread);
+            FD_ZERO(&fdwrite);
+            FD_ZERO(&fdexcep);
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+            curl_multi_fdset(self->curlm, &fdread, &fdwrite, &fdexcep, &maxfd);
+            rc = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &timeout);
+            switch(rc) {
+              case -1:
+                  break;
+              default:
+                  while(CURLM_CALL_MULTI_PERFORM ==
+                      curl_multi_perform(self->curlm, &remaining));
+                  break;
+            }
+        }
+#endif
+
+void
+curl_multi_DESTROY(self)
+        WWW::Curl::Multi self
+    CODE:
+        perl_curl_multi_delete(self);

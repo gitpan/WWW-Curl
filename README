@@ -1,6 +1,6 @@
-README for Perl extension WWW::Curl::easy.
+README for Perl extension WWW::Curl
 
-The perl module WWW::Curl::easy provides an interface to the cURL library "libcurl".
+The perl module WWW::Curl provides an interface to the cURL library "libcurl".
 See http://curl.haxx.se/ for more information on cURL and libcurl.
 
 This module requires libcurl and the corresponding headerfiles to be
@@ -8,7 +8,7 @@ installed. You then may install this module via the usual way:
 
     perl Makefile.PL
     make
-    make test # see note below
+    make test # NEEDS CONFIGURATION - see note below
     make install
 
 The Makefile.PL script will try to use the 'curl-config' command to find
@@ -25,10 +25,11 @@ Testing:
 'make test' will only run if you have a suitable test web server somewhere - 
 the 'printenv' script commonly distributed with apache on linux is useable, for
 example.  You need to set the environment variable CURL_TEST_URL to the URL
-of such a script for 'make test' to work automatically.
+of such a script and set the environment variable PERL_MM_USE_DEFAULT=1 for 'make test'
+to work automatically.
 
-Test 08ssl.t will only work properly if you have a list of well
-known CA certificates in the file 'ca-bundle.crt' in the current directory.
+Test 08ssl.t will only work well if you have a list of "well-known"
+CA certificates in the file 'ca-bundle.crt' in the current directory.
 This file can be obtained from most distributions of mod_ssl (www.modssl.org) -
 it isn't supplied here, as its currently >250Kbytes.
 
@@ -40,20 +41,24 @@ This software is distributed AS IS, WITHOUT WARRANTY OF ANY KIND, either
 express or implied. Send praise, patches, money, beer and pizza to the author.
 Send complaints to /dev/null. ;-)
 
-The original author of this software is Georg Horn <horn@koblenz-net.de>
+The author of the original relase of this software is Georg Horn <horn at koblenz-net.de>
 
-Parts of the callback support have been added Forrest Cahoon
-<forrest.cahoon@merrillcorp.com>
+Parts of the callback support were added Forrest Cahoon
+<forrest.cahoon at merrillcorp.com>
 
 More callback support, many tests additional documentation and Makefile
-features have been added by Cris Bailiff <c.bailiff+curl@devsecure.com>
+features have been added by Cris Bailiff <c.bailiff+curl at devsecure.com>
 
-The current maintainer is Cris Bailiff <c.bailiff+curl@devsecure.com>
+Curl multi support has been added by Sebastian Riedel <sri at oook.de>
 
-The latest version can be downloaded from http://curl.haxx.se/libcurl/perl/
+The current maintainer is Cris Bailiff <c.bailiff+curl at devsecure.com>
+
+The latest version can be downloaded from http://curl.haxx.se/libcurl/perl/ or
+found on CPAN as the module WWW::Curl
  
-Copyright (C) 2000, Daniel Stenberg, , et al.  
+Copyright (C) 2000-2005, Daniel Stenberg, Cris Bailiff , et al.  
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is
 furnished to do so, under the terms of the MPL or the MIT/X-derivate 
-licenses. You may pick one of these licenses.                                             
+licenses. You may pick one of these licenses.
+

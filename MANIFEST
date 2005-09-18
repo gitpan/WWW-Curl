@@ -4,10 +4,10 @@ Makefile.PL
 README
 Curl.xs
 typemap
-easy.pm.in
-lib/Curl/easy.pm
+Easy.pm.in
 lib/WWW/Curl.pm
-lib/WWW/Curl/form.pm
+lib/WWW/Curl/Form.pm
+lib/WWW/Curl/Multi.pm
 t/00constants.t
 t/01basic.t
 t/02header-callback.t
@@ -28,3 +28,19 @@ t/16formpost.t
 t/17slist.t
 t/18twinhandles.t
 t/19basic-back.t
+t/19basic-back.t
+t/20basic-back-func.t
+t/21basic-back-easy.t
+t/new/00constants.t
+t/new/01basic.t
+t/new/02header-callback.t
+t/new/03body-callback.t
+t/new/04abort.t
+t/new/05progress.t
+t/new/06http-post.t
+t/new/07errbuf.t
+t/new/08duphandle.t
+t/new/09duphandle-callback.t
+t/new/10multi-callback.t
+t/new/README
+META.yml                                 Module meta-data (added by MakeMaker)

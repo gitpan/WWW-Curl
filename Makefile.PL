@@ -42,7 +42,7 @@ if (!defined($lflags)) {
     $lflags="-lcurl";
     # Windows version of libcurl - not tested, feedback welcome!
     if ($^O eq 'MSWin32') {
-	$lflags="libcurl.lib";
+        $lflags="libcurl.lib";
     }
     print "Guessing your linker flags as: $lflags\n";
 }
@@ -110,7 +110,7 @@ constant(char *name, int arg)
 {
     errno = 0;
     if (strncmp(name, "CURLINFO_", 9) == 0) {
-	name += 9;
+        name += 9;
     switch (*name) {
 HERE
         ;
@@ -128,7 +128,7 @@ HERE
                 $count++;
             }
         }
-	if ($count or $next_initial eq 'Z') {
+        if ($count or $next_initial eq 'Z') {
             print CURL_XS "            break;\n";
         }
     }
@@ -138,8 +138,8 @@ HERE
     print CURL_XS <<HERE2
 
     if (strncmp(name, "CURLOPT_", 8) == 0) {
-	name += 8;
-	switch (*name) {
+        name += 8;
+        switch (*name) {
 HERE2
         ;
 
@@ -156,7 +156,7 @@ HERE2
                 $count++;
             }
         }
-	if ($count or $next_initial eq 'Z') {
+        if ($count or $next_initial eq 'Z') {
             print CURL_XS "            break;\n";
         }
     }
@@ -165,9 +165,6 @@ HERE2
     print CURL_XS "    }\n";
     print CURL_XS <<HERE
 
-#ifdef WITH_INTERNAL_VARS
-    if (strEQ(name, "USE_INTERNAL_VARS")) return USE_INTERNAL_VARS;
-#endif
     errno = EINVAL;
     return 0;
 }
@@ -176,15 +173,16 @@ HERE
 
     close(CURL_XS);
 
-    print "Building easy.pm constants for your libcurl version\n";
+    print "Building Easy.pm constants for your libcurl version\n";
 
-    open(EASY_PM,    ">lib/WWW/Curl/easy.pm")    or die "Can't create lib/WWW/Curl/easy.pm\n";
-    open(EASY_PM_IN, "easy.pm.in") or die "Can't read easy.pm.in\n";
+    open(EASY_PM,    ">lib/WWW/Curl/Easy.pm")    or die "Can't create lib/WWW/Curl/Easy.pm\n";
+    open(EASY_PM_IN, "Easy.pm.in") or die "Can't read Easy.pm.in\n";
     while (my $line = <EASY_PM_IN>) {
         if ($line !~ m/^\@CURLOPT_INCLUDE\@/) {
             print EASY_PM $line;
         } else {
             foreach my $option (sort keys %cinit_types) {
+                next unless $option; # an empty CURLOPT_
                 print EASY_PM "CURLOPT_$option\n";
             }
             foreach my $option (sort @curlinfo) {
@@ -203,7 +201,6 @@ WriteMakefile(
     'NAME'         => 'WWW::Curl',
     'VERSION_FROM' => 'lib/WWW/Curl.pm',      # finds $VERSION
     'LIBS'         => $lflags,        # e.g., '-lm'
-    'DEFINE'       => '-DHAVE_INTERNAL_VARS',   # e.g., '-DHAVE_SOMETHING'
     'INC'          => $curl_d,        # e.g., '-I/usr/include/other'
     'clean' => { FILES => "head.out body.out" }
 );

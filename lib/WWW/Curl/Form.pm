@@ -1,12 +1,9 @@
-#
-# $Id: form.pm,v 1.1 2003/04/22 12:45:27 crisb Exp $
-#
-
-package WWW::Curl::form;
+package WWW::Curl::Form;
 use strict;
 
-require WWW::Curl;
-
+# In development!
+#
+#require WWW::Curl;
 #use vars qw(@ISA @EXPORT_OK);
 #require Exporter;
 #require AutoLoader;

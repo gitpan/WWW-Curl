@@ -1,42 +1,30 @@
-# Test script for Perl extension WWW::Curl::easy.
-# Check out the file README for more info.
-
-# Before `make install' is performed this script should be runnable with
-# `make t/thisfile.t'. After `make install' it should work as `perl thisfile.t'
+#!perl
 
 ######################### We start with some black magic to print on failure.
 
 # Change 1..1 below to 1..last_test_to_print .
 use strict;
 
-BEGIN { $| = 1; print "1..8\n"; }
 END {print "not ok 1\n" unless $::loaded;}
-use WWW::Curl::easy;
+use WWW::Curl::Easy;
 
 $::loaded = 1;
-print "ok 1\n";
 
 ######################### End of black magic.
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
+my $count=0;
 
-my $count=1;
+use ExtUtils::MakeMaker qw(prompt);
 
-# Read URL to get
-my $defurl = "http://localhost/cgi-bin/printenv";
-my $url;
-if (defined ($ENV{CURL_TEST_URL})) {
-	$url=$ENV{CURL_TEST_URL};
-} else {
-$url = "";
-print "Please enter an URL to fetch [$defurl]: ";
-$url = <STDIN>;
-if ($url =~ /^\s*\n/) {
-    $url = $defurl;
+# Read URL to get, defaulting to environment variable if supplied
+my $defurl=$ENV{CURL_TEST_URL} || "";
+my $url = prompt("# Please enter an URL to fetch",$defurl);
+if (!$url) {
+    print "1..0 # No test URL supplied - skipping test\n";
+    exit;
 }
-}
+print "1..8\n";
+print "ok ".++$count."\n";
 
 my $header_called=0;
 sub header_callback {
@@ -46,21 +34,19 @@ sub header_callback {
 my $body_called=0;
 sub body_callback {
 	my ($chunk,$handle)=@_;
-#	print STDERR "body callback called with ",length($chunk)," bytes\n";
-#	print STDERR "data=$chunk\n";
 	$body_called++;
 	return length($chunk); # OK
 }
 
 
 # Init the curl session
-my $curl1 = WWW::Curl::easy->new();
+my $curl1 = WWW::Curl::Easy->new();
 if ($curl1 == 0) {
     print "not ";
 }
 print "ok ".++$count."\n";
 
-my $curl2 = WWW::Curl::easy->new();
+my $curl2 = WWW::Curl::Easy->new();
 if ($curl2 == 0) {
     print "not ";
 }
@@ -68,7 +54,6 @@ print "ok ".++$count."\n";
 
 foreach my $handle ($curl1,$curl2) {
 $handle->setopt(CURLOPT_NOPROGRESS, 1);
-$handle->setopt(CURLOPT_MUTE, 1);
 $handle->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $handle->setopt(CURLOPT_TIMEOUT, 30);
 
@@ -97,7 +82,7 @@ if ($code2 != 0) {
 print "ok ".++$count."\n";
 
 
-print STDERR "next test will fail on libcurl < 7.7.2\n";
+print "# next test will fail on libcurl < 7.7.2\n";
 print "not " if (!$header_called); # ok if you have a libcurl <7.7.2
 print "ok ".++$count."\n";
 

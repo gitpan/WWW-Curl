@@ -1,27 +1,23 @@
-# Test script for Perl extension WWW::Curl::easy.
-# Check out the file README for more info.
-
-# Before `make install' is performed this script should be runnable with
-# `make t/thisfile.t'. After `make install' it should work as `perl thisfile.t'
+#!perl
 
 ######################### We start with some black magic to print on failure.
 
 # Change 1..1 below to 1..last_test_to_print .
 use strict;
 
-use WWW::Curl::easy;
-
+use WWW::Curl::Easy;
 
 ######################### End of black magic.
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
-
 my $count=1;
 
+if (&WWW::Curl::Easy::version() !~ /ssl/i) {
+	print "1..0 # libcurl not compiled with ssl support - skipping ssl tests\n";
+	exit;
+}
+
 my $sslversion95=0;
-$sslversion95++ if (&WWW::Curl::easy::version() =~ m/SSL 0.9.5/); # 0.9.5 has buggy connect with some ssl sites
+$sslversion95++ if (&WWW::Curl::Easy::version() =~ m/SSL 0.9.5/); # 0.9.5 has buggy connect with some ssl sites
 
 my $haveca=0;
 if (-f "ca-bundle.crt") {
@@ -29,10 +25,15 @@ if (-f "ca-bundle.crt") {
 }
 
 # list of tests
-#  site-url, verifypeer(0,1), verifyhost(0,2), result(0=ok, 1=fail), result-openssl0.9.5
+#         site-url, verifypeer(0,1), verifyhost(0,2), result(0=ok, 1=fail), result-openssl0.9.5
 my $url_list=[
-	[ 'https://207.46.134.190/',  0, 0, 0 , 0 ], # www.microsoft.com
-	[ 'https://207.46.249.222/',  0, 2, 1 , 1 ], # www.microsoft.com
+
+#       Microsoft is akamied, so it moves around too much for a reliable test, commented out
+#	[ 'https://207.46.134.190/',  0, 0, 0 , 0 ], # www.microsoft.com
+#	[ 'https://207.46.249.222/',  0, 2, 1 , 1 ], # www.microsoft.com
+
+        [ 'https://65.205.248.243/',  0, 0, 0 , 0 ], # www.thawte.com
+        [ 'https://65.205.248.243/',  0, 2, 1 , 1 ], # www.thawte.com
 	[ 'https://65.205.249.60/',  0, 0, 0 , 0 ], # www.verisign.com
 	[ 'https://65.205.249.60/',  0, 2, 1 , 1 ], # www.verisign.com
 	[ 'https://www.microsoft.com/', 0, 0, 0 , 0 ],
@@ -41,23 +42,26 @@ my $url_list=[
 	[ 'https://www.verisign.com/', 0, 0, 0 , 0 ], 
 	[ 'https://www.verisign.com/', 0, 0, 0 , 0 ],
 	[ 'https://www.verisign.com/', 0, 2, 0 , 0 ],
-	[ 'https://lc2.law13.hotmail.passport.com/', 0, 0, 0 , 0 ],
-	[ 'https://lc2.law13.hotmail.passport.com/', 0, 2, 0 , 0 ],
-	[ 'https://lc2.law13.hotmail.passport.com/', 1, 2, 0 , 1 ], # fail on 0.9.5
-	[ 'https://lc2.law13.hotmail.passport.com/', 1, 2, 0 , 1 ], # fail on 0.9.5
+        [ 'https://www.thawte.com/',  0, 0, 0 , 0 ], # www.thawte.com
+        [ 'https://www.thawte.com/',  0, 2, 0 , 0 ], # www.thawte.com
+	[ 'https://www.passport.net/', 0, 0, 0 , 0 ],
+	[ 'https://www.passport.net/', 0, 2, 0 , 0 ],
+	[ 'https://www.passport.net/', 1, 2, 0 , 1 ], # fail on 0.9.5
+	[ 'https://www.passport.net/', 1, 2, 0 , 1 ], # fail on 0.9.5
 
 # libcurl < 7.9.3 crashes with more than 5 ssl hosts per handle.
-	[ 'https://www.modssl.org/',  0, 0, 0 , 0],
-	[ 'https://www.modssl.org/',  0, 2, 0 , 0],
-	[ 'https://www.modssl.org/',  1, 0, 1 , 0],
-	[ 'https://www.modssl.org/',  1, 2, 1 , 0],
+
+	[ 'https://rt.perl.org/',  0, 0, 0 , 0],
+	[ 'https://rt.perl.org/',  0, 2, 0 , 0],
+	[ 'https://rt.perl.org/',  1, 0, 1 , 0],
+	[ 'https://rt.perl.org/',  1, 2, 1 , 0],
 ];
 
 print "1..".($#$url_list+6)."\n";
 print "ok 1\n";
 
 # Init the curl session
-my $curl = WWW::Curl::easy->new();
+my $curl = WWW::Curl::Easy->new();
 if ($curl == 0) {
     print "not ";
 }
@@ -65,7 +69,6 @@ print "ok ".++$count."\n";
 
 
 $curl->setopt(CURLOPT_NOPROGRESS, 1);
-$curl->setopt(CURLOPT_MUTE, 0);
 #$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
@@ -89,13 +92,11 @@ $curl->setopt(CURLOPT_FRESH_CONNECT, 1);
 print "ok ".++$count."\n";
 $curl->setopt(CURLOPT_CAINFO,"ca-bundle.crt");                       
 
-print STDERR "\n";
 foreach my $test_list (@$url_list) {
     my ($url,$verifypeer,$verifyhost,$result,$result95)=@{$test_list};
     if ($verifypeer && !$haveca) { $result=1 } # expect to fail if no ca-bundle file
     if ($sslversion95) { $result=$result95 }; # change expectation	
  
-    print STDERR "testing $url verify=$verifypeer at level $verifyhost expect ".($result?"fail":"pass")."\n";
 
     $curl->setopt(CURLOPT_SSL_VERIFYPEER,$verifypeer); # do verify 
     $curl->setopt(CURLOPT_SSL_VERIFYHOST,$verifyhost); # check name
@@ -105,9 +106,9 @@ foreach my $test_list (@$url_list) {
 
     $retcode=$curl->perform();
     if ( ($retcode != 0) != $result) {
-	print STDERR "error $retcode ".$curl->errbuf."\n";
 	print "not ";
     };
-    print "ok ".++$count."\n";
+    print "ok ".++$count." ";
+    print "test $url verify=$verifypeer/level=$verifyhost expected ".($result?"fail":"pass")." - $retcode\n";
 
 }

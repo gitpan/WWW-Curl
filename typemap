@@ -1,3 +1,4 @@
 TYPEMAP
-WWW::Curl::easy T_PTROBJ
-WWW::Curl::form T_PTROBJ
+WWW::Curl::Easy T_PTROBJ
+WWW::Curl::Form T_PTROBJ
+WWW::Curl::Multi T_PTROBJ

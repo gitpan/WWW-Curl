@@ -5,14 +5,15 @@
 # Change 1..1 below to 1..last_test_to_print .
 use strict;
 
-END {print "not ok 1\n" unless $::loaded;}
 use WWW::Curl::Easy;
 
+END {print "not ok 1\n" unless $::loaded;}
 $::loaded = 1;
 
 ######################### End of black magic.
 
 my $count=0;
+
 
 use ExtUtils::MakeMaker qw(prompt);
 
@@ -23,7 +24,7 @@ if (!$url) {
     print "1..0 # No test URL supplied - skipping test\n";
     exit;
 }
-print "1..7\n";
+print "1..6\n";
 print "ok ".++$count."\n";
 
 # Init the curl session
@@ -53,21 +54,20 @@ my @myheaders;
 $myheaders[0] = "Server: www";
 $myheaders[1] = "User-Agent: Perl interface for libcURL";
 $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders);
-
-# duplicate the handle
-my $other_handle=$curl->duphandle();
-
+                                                                        
 # Go get it
-#foreach my $x ($other_handle,$curl) {
-foreach my $x ($other_handle,$curl) {
-    my $retcode=$x->perform();
-    if ($retcode == 0) {
-	my $bytes=$x->getinfo(CURLINFO_SIZE_DOWNLOAD);
-	my $realurl=$x->getinfo(CURLINFO_EFFECTIVE_URL);
-	my $httpcode=$x->getinfo(CURLINFO_HTTP_CODE);
-    } else {
-	print "not ";
-    }
-    print "ok ".++$count."\n";
+my $retcode=$curl->perform();
+if ($retcode == 0) {
+    my $bytes=$curl->getinfo(CURLINFO_SIZE_DOWNLOAD);
+#    print STDERR "$bytes bytes read ";
+    my $realurl=$curl->getinfo(CURLINFO_EFFECTIVE_URL);
+    my $httpcode=$curl->getinfo(CURLINFO_HTTP_CODE);
+#    print STDERR "effective fetched url (http code: $httpcode) was: $url ";
+} else {
+   # We can acces the error message in $errbuf here
+#    print STDERR "$retcode / ".$curl->errbuf."\n";
+    print "not ";
 }
+print "ok ".++$count."\n";
+
 exit;
