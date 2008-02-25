@@ -4,7 +4,7 @@ use strict;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 
-$VERSION = '3.01';
+$VERSION = '3.1';
 
 require WWW::Curl;
 require Exporter;
@@ -130,6 +130,10 @@ WWW::Curl::Easy is a Perl extension interface for libcurl.
 
     $curl->getinfo( CURLINFO_OPTION )
         This method returns the requested info from the object.
+
+    $curl->strerror( ErrNo )
+        This method returns a string describing the CURLcode error code passed 
+	in the argument errornum.
 
 Aliases for these methods have also been created in the WWW::Curl::easy namespace,
 to provide some backwards compatability for existing scripts - you must still 

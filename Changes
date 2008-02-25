@@ -1,4 +1,17 @@
 Revision history for Perl extension WWW::Curl.
+3.11 Mon Feb 25 2008: - Cris Bailiff <c.bailiff+curl at devsecure.com>
+    - Merge recent contributions.
+    - Updates from various small bug/build reports
+
+3.10 Fri Feb 22 2008: - Anton Fedorov <datacompboy at mail.ru>
+    - Fix documentation for multi interface
+    - Added WWW::Curl::Share
+    - Added strerror into Easy and Multi interfaces
+    - Added support for CURLOPT_DEBUGFUNCTION in Easy interface
+
+3.02_01 Tue Jan 29 2008: - Mark Hindley
+    - Contributed CURLOPT_*_LARGE support
+
 3.02_00 Fri Sep 16 2005: - Cris Bailiff <c.bailiff+curl at devsecure.com>
     - Workaround case-sensitive filename issues by making equivalent Easy
       names in easy namespace

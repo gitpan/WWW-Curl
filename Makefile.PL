@@ -79,6 +79,8 @@ if (!defined($curl_h)) {
     my %cinit_types;
     my %cinit_codes;
     my @curlinfo;
+    my @curlshopt;
+    my @curllockopt;
     while (<CURL_H>) {
         if ($_ =~ m/CINIT\(/ and $_ !~ m/#/) {
             my ($option, $type, $code) =
@@ -87,6 +89,10 @@ if (!defined($curl_h)) {
             $cinit_codes{$option} = $code;
         } elsif ($_ =~ m/^\s*(CURLINFO_\w+)/) {
             push @curlinfo, $1;
+        } elsif ($_ =~ m/^\s*(CURLSHOPT_\w+)/) {
+            push @curlshopt, $1;
+        } elsif ($_ =~ m/^\s*(CURL_LOCK_DATA_\w+)/) {
+            push @curllockopt, $1;
         }
 
     }
@@ -135,7 +141,9 @@ HERE
 
     print CURL_XS "    };\n";
     print CURL_XS "    }\n";
-    print CURL_XS <<HERE2
+
+	# CURLOPT_
+	print CURL_XS <<HERE2
 
     if (strncmp(name, "CURLOPT_", 8) == 0) {
         name += 8;
@@ -163,6 +171,66 @@ HERE2
 
     print CURL_XS "    };\n";
     print CURL_XS "    }\n";
+
+	# CURLSHOPT_
+	print CURL_XS <<HERE2
+
+    if (strncmp(name, "CURLSHOPT_", 10) == 0) {
+        name += 10;
+        switch (*name) {
+HERE2
+        ;
+
+    foreach my $next_initial ('A' .. 'Z') {
+        print CURL_XS "        case '$next_initial':\n";
+        my $count = 0;
+        foreach my $option (sort @curlshopt) {
+            my $initial = substr($option, 10, 1);
+            if ($next_initial eq $initial) {
+				my $optsuff = substr($option, 10);
+                print CURL_XS
+"            if (strEQ(name, \"$optsuff\")) return $option;\n";
+				
+                $count++;
+            }
+        }
+        if ($count or $next_initial eq 'Z') {
+            print CURL_XS "            break;\n";
+        }
+    }
+
+    print CURL_XS "    };\n";
+    print CURL_XS "    }\n";
+
+	# CURL_LOCK_DATA_
+	print CURL_XS <<HERE2
+    if (strncmp(name, "CURL_LOCK_DATA_", 15) == 0) {
+        name += 15;
+        switch (*name) {
+HERE2
+        ;
+
+    foreach my $next_initial ('A' .. 'Z') {
+        print CURL_XS "        case '$next_initial':\n";
+        my $count = 0;
+        foreach my $option (sort @curllockopt) {
+            my $initial = substr($option, 15, 1);
+            if ($next_initial eq $initial) {
+				my $optsuff = substr($option, 15);
+                print CURL_XS
+"            if (strEQ(name, \"$optsuff\")) return $option;\n";
+				
+                $count++;
+            }
+        }
+        if ($count or $next_initial eq 'Z') {
+            print CURL_XS "            break;\n";
+        }
+    }
+
+    print CURL_XS "    };\n";
+    print CURL_XS "    }\n";
+
     print CURL_XS <<HERE
 
     errno = EINVAL;
@@ -179,7 +247,7 @@ HERE
     open(EASY_PM_IN, "Easy.pm.in") or die "Can't read Easy.pm.in\n";
     while (my $line = <EASY_PM_IN>) {
         if ($line !~ m/^\@CURLOPT_INCLUDE\@/) {
-            print EASY_PM $line;
+			print EASY_PM $line;
         } else {
             foreach my $option (sort keys %cinit_types) {
                 next unless $option; # an empty CURLOPT_
@@ -192,6 +260,25 @@ HERE
     }
     close(EASY_PM);
     close(EASY_PM_IN);
+
+	print "Building Share.pm constants for your libcurl version\n";
+
+    open(SHARE_PM,   ">lib/WWW/Curl/Share.pm")    or die "Can't create lib/WWW/Curl/Share.pm\n";
+    open(SHARE_PM_IN, "Share.pm.in") or die "Can't read Share.pm.in\n";
+    while (my $line = <SHARE_PM_IN>) {
+        if ($line !~ m/^(.*?)\@CURLSHOPT_INCLUDE\@/) {
+            print SHARE_PM $line;
+        } else {
+            foreach my $option (sort @curlshopt) {
+                print SHARE_PM $1 . $option . "\n";
+            }
+            foreach my $option (sort @curllockopt) {
+                print SHARE_PM $1 . $option . "\n";
+            }
+        }
+    }
+    close(SHARE_PM);
+    close(SHARE_PM_IN);
 }
 
 #

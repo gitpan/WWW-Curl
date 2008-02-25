@@ -28,33 +28,25 @@ if (-f "ca-bundle.crt") {
 #         site-url, verifypeer(0,1), verifyhost(0,2), result(0=ok, 1=fail), result-openssl0.9.5
 my $url_list=[
 
-#       Microsoft is akamied, so it moves around too much for a reliable test, commented out
-#	[ 'https://207.46.134.190/',  0, 0, 0 , 0 ], # www.microsoft.com
-#	[ 'https://207.46.249.222/',  0, 2, 1 , 1 ], # www.microsoft.com
-
         [ 'https://65.205.248.243/',  0, 0, 0 , 0 ], # www.thawte.com
         [ 'https://65.205.248.243/',  0, 2, 1 , 1 ], # www.thawte.com
 	[ 'https://65.205.249.60/',  0, 0, 0 , 0 ], # www.verisign.com
 	[ 'https://65.205.249.60/',  0, 2, 1 , 1 ], # www.verisign.com
 	[ 'https://www.microsoft.com/', 0, 0, 0 , 0 ],
 	[ 'https://www.microsoft.com/', 0, 0, 0 , 0 ],
-	[ 'https://www.verisign.com/', 1, 2, 0 , 0 ], # verisign have broken ssl - do this first
+	[ 'https://www.verisign.com/', 1, 2, 0 , 0 ], # verisign have had broken ssl - do this first
 	[ 'https://www.verisign.com/', 0, 0, 0 , 0 ], 
 	[ 'https://www.verisign.com/', 0, 0, 0 , 0 ],
 	[ 'https://www.verisign.com/', 0, 2, 0 , 0 ],
-        [ 'https://www.thawte.com/',  0, 0, 0 , 0 ], # www.thawte.com
-        [ 'https://www.thawte.com/',  0, 2, 0 , 0 ], # www.thawte.com
-	[ 'https://www.passport.net/', 0, 0, 0 , 0 ],
-	[ 'https://www.passport.net/', 0, 2, 0 , 0 ],
-	[ 'https://www.passport.net/', 1, 2, 0 , 1 ], # fail on 0.9.5
-	[ 'https://www.passport.net/', 1, 2, 0 , 1 ], # fail on 0.9.5
+        [ 'https://www.thawte.com/',  0, 0, 0 , 0 ],
+        [ 'https://www.thawte.com/',  0, 2, 0 , 0 ],
 
 # libcurl < 7.9.3 crashes with more than 5 ssl hosts per handle.
 
-	[ 'https://rt.perl.org/',  0, 0, 0 , 0],
-	[ 'https://rt.perl.org/',  0, 2, 0 , 0],
-	[ 'https://rt.perl.org/',  1, 0, 1 , 0],
-	[ 'https://rt.perl.org/',  1, 2, 1 , 0],
+	[ 'https://www.rapidssl.com/',  0, 0, 0 , 0],
+	[ 'https://www.rapidssl.com/',  0, 2, 0 , 0],
+	[ 'https://www.rapidssl.com/',  1, 0, 1 , 0],
+	[ 'https://www.rapidssl.com/',  1, 2, 1 , 0],
 ];
 
 print "1..".($#$url_list+6)."\n";
@@ -73,7 +65,7 @@ $curl->setopt(CURLOPT_NOPROGRESS, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
 my @myheaders;
-$myheaders[0] = "User-Agent: Verifying SSL functions in perl interface for libcURL";
+$myheaders[0] = "User-Agent: Verifying SSL functions in WWW::Curl perl interface for libcURL";
 $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders);
                                                                                        
 open HEAD, ">head.out";

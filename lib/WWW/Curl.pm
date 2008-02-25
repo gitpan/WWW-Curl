@@ -5,7 +5,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '3.02';
+    $VERSION = '3.11';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -32,12 +32,15 @@ See WWW::Curl::Easy and WWW::Curl::Multi for more documentation.
 
 =head1 AUTHOR
 
+Version 3.10 adds the WWW::Curl::Share interface by Anton Federov
+and large file options after a contribution from Mark Hindley.
+
 Version 3.02 adds some backwards compatibility for scripts still using
 'WWW::Curl::easy' names.
 
 Version 3.00 adds WWW::Curl::Multi interface, and a new module names
 following perl conventions (WWW::Curl::Easy rather than WWW::Curl::easy),
-by Sebastian Riedel <sri@cpan.org>
+by Sebastian Riedel <sri at cpan.org>
 
 Version 2.00 of WWW::Curl::easy is a renaming of the previous version
 (named Curl::easy), to follow CPAN naming guidelines, by Cris Bailiff.

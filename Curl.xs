@@ -36,6 +36,7 @@ typedef enum {
     CALLBACK_HEADER,
     CALLBACK_PROGRESS,
     CALLBACK_PASSWD,
+    CALLBACK_DEBUG,
     CALLBACK_LAST
 } perl_curl_easy_callback_code;
 
@@ -82,6 +83,10 @@ typedef struct {
 #endif
 } perl_curl_multi;
 
+typedef struct {
+    struct CURLSH *curlsh;
+} perl_curl_share;
+
 
 /* switch from curl option codes to the relevant callback index */
 static perl_curl_easy_callback_code callback_index(int option)
@@ -116,6 +121,13 @@ static perl_curl_easy_callback_code callback_index(int option)
            break;
 #endif
 
+/* CURLOPT_DEBUGFUNCTION from 7.9.6 */
+#if (LIBCURL_VERSION_NUM>=0x070906)
+	case CURLOPT_DEBUGFUNCTION:
+	case CURLOPT_DEBUGDATA:
+	   return CALLBACK_DEBUG;
+	   break;
+#endif
     }
     croak("Bad callback index requested\n");
     return CALLBACK_LAST;
@@ -238,6 +250,25 @@ static void perl_curl_multi_delete(perl_curl_multi *self)
 
 }
 
+/* make a new share */
+static perl_curl_share * perl_curl_share_new()
+{
+    perl_curl_share *self;
+    Newz(1, self, 1, perl_curl_share);
+    if (!self)
+        croak("out of memory");
+    self->curlsh=curl_share_init();
+    return self;
+}
+
+/* delete the share */
+static void perl_curl_share_delete(perl_curl_share *self)
+{
+    if (self->curlsh) 
+        curl_share_cleanup(self->curlsh);
+    Safefree(self);
+}
+
 
 /* generic fwrite callback, which decides which callback to call */
 static size_t
@@ -253,7 +284,6 @@ fwrite_wrapper (
 
     if (call_function) { /* We are doing a callback to perl */
         int count, status;
-        SV *sv;
 
         ENTER;
         SAVETMPS;
@@ -300,6 +330,69 @@ fwrite_wrapper (
     }
 }
 
+/* debug fwrite callback */
+static size_t
+fwrite_wrapper2 (
+    const void *ptr,
+    size_t size,
+    perl_curl_easy *self,
+    void *call_function,
+    void *call_ctx,
+    int curl_infotype)
+{
+    dSP;
+
+    if (call_function) { /* We are doing a callback to perl */
+        int count, status;
+        SV *sv;
+
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+
+        if (ptr) {
+            XPUSHs(sv_2mortal(newSVpvn((char *)ptr, (STRLEN)(size * sizeof(char)))));
+        } else { /* just in case */
+            XPUSHs(&PL_sv_undef);
+        }
+
+        if (call_ctx) {
+            XPUSHs(sv_2mortal(newSVsv(call_ctx)));
+        } else { /* should be a stdio glob ? */
+           XPUSHs(&PL_sv_undef);
+        }
+
+	XPUSHs(sv_2mortal(newSViv(curl_infotype)));
+
+        PUTBACK;
+        count = perl_call_sv((SV *) call_function, G_SCALAR);
+        SPAGAIN;
+
+        if (count != 1)
+            croak("callback for CURLOPT_*FUNCTION didn't return a status\n");
+
+        status = POPi;
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+        return status;
+
+    } else {
+   /* perform write directly, via PerlIO */
+
+        PerlIO *handle;
+        if (call_ctx) { /* Assume the context is a GLOB */
+            handle = IoOFP(sv_2io(call_ctx));
+        
+        } else { /* punt to stdout */
+           handle = PerlIO_stdout();
+        }
+           return PerlIO_write(handle,ptr,size*sizeof(char));
+    }
+}
+
 /* Write callback for calling a perl callback */
 size_t
 write_callback_func(const void *ptr, size_t size, size_t nmemb, void *stream)
@@ -319,6 +412,17 @@ writeheader_callback_func(const void *ptr, size_t size, size_t nmemb, void *stre
 
     return fwrite_wrapper(ptr,size,nmemb,self,
             self->callback[CALLBACK_HEADER],self->callback_ctx[CALLBACK_HEADER]);
+}
+
+/* debug callback for calling a perl callback */
+size_t
+debug_callback_func(CURL* handle, int curl_infotype, const void *ptr, size_t size, void *stream)
+{
+    perl_curl_easy *self;
+    self=(perl_curl_easy *)stream;
+
+    return fwrite_wrapper2(ptr,size,self,
+            self->callback[CALLBACK_DEBUG],self->callback_ctx[CALLBACK_DEBUG],curl_infotype);
 }
 
 /* read callback for calling a perl callback */
@@ -511,6 +615,8 @@ typedef perl_curl_form * WWW__Curl__Form;
 
 typedef perl_curl_multi * WWW__Curl__Multi;
 
+typedef perl_curl_share * WWW__Curl__Share;
+
 MODULE = WWW::Curl    PACKAGE = WWW::Curl::Easy    PREFIX = curl_easy_
 
 BOOT:
@@ -553,6 +659,9 @@ curl_easy_init(...)
 #if (LIBCURL_VERSION_NUM<0x070A08)
         curl_easy_setopt(self->curl, CURLOPT_PASSWDFUNCTION, passwd_callback_func);
 #endif
+#if (LIBCURL_VERSION_NUM>=0x070906)
+	curl_easy_setopt(self->curl, CURLOPT_DEBUGFUNCTION, debug_callback_func);
+#endif
 
         /* set our own object as the context for all curl callbacks */
         curl_easy_setopt(self->curl, CURLOPT_FILE, self); 
@@ -561,6 +670,9 @@ curl_easy_init(...)
         curl_easy_setopt(self->curl, CURLOPT_PROGRESSDATA, self); 
 #if (LIBCURL_VERSION_NUM<0x070A08)
         curl_easy_setopt(self->curl, CURLOPT_PASSWDDATA, self); 
+#endif
+#if (LIBCURL_VERSION_NUM>=0x070906)
+        curl_easy_setopt(self->curl, CURLOPT_DEBUGDATA, self); 
 #endif
         /* we always collect this, in case it's wanted */
         curl_easy_setopt(self->curl, CURLOPT_ERRORBUFFER, self->errbuf);
@@ -639,6 +751,9 @@ curl_easy_setopt(self, option, value)
 #if (LIBCURL_VERSION_NUM<0x070A08)
             case CURLOPT_PASSWDDATA:
 #endif
+#if (LIBCURL_VERSION_NUM>=0x070609)
+            case CURLOPT_DEBUGDATA:
+#endif
                 perl_curl_easy_register_callback(self,
                         &(self->callback_ctx[callback_index(option)]),value);
                 break;
@@ -650,6 +765,9 @@ curl_easy_setopt(self, option, value)
             case CURLOPT_PROGRESSFUNCTION:
 #if (LIBCURL_VERSION_NUM<0x070A08)
             case CURLOPT_PASSWDFUNCTION:
+#endif
+#if (LIBCURL_VERSION_NUM>=0x070609)
+            case CURLOPT_DEBUGFUNCTION:
 #endif
                perl_curl_easy_register_callback(self,
                        &(self->callback[callback_index(option)]),value);
@@ -715,16 +833,39 @@ curl_easy_setopt(self, option, value)
                 break;
             */
 
+            /* Curl share support from Anton Fedorov */
+#if (LIBCURL_VERSION_NUM>=0x070a03)
+	    case CURLOPT_SHARE:
+		if (sv_derived_from(value, "WWW::Curl::Share")) {
+		    WWW__Curl__Share wrapper;
+		    IV tmp = SvIV((SV*)SvRV(value));
+		    wrapper = INT2PTR(WWW__Curl__Share,tmp);
+		    RETVAL = curl_easy_setopt(self->curl, option, wrapper->curlsh);
+		} else
+		    croak("value is not of type WWW::Curl::Share"); 
+		break;
+#endif
+
             /* default cases */
             default:
-                if (option < CURLOPTTYPE_OBJECTPOINT) { /* An integer value: */
+                if (option < CURLOPTTYPE_OBJECTPOINT) { /* A long (integer) value */
                     RETVAL = curl_easy_setopt(self->curl, option, (long)SvIV(value));
-                } else { /* A char * value: */
-                    /* FIXME: Does curl really want NULL for empty strings? */
-                    STRLEN dummy;
-                    char *pv = SvPV(value, dummy);
-                    RETVAL = curl_easy_setopt(self->curl, option, *pv ? pv : NULL);
-                };
+                }
+		else if (option < CURLOPTTYPE_FUNCTIONPOINT) { /* An objectpoint - string */
+			/* FIXME: Does curl really want NULL for empty strings? */
+			STRLEN dummy;
+			char *pv = SvPV(value, dummy);
+			RETVAL = curl_easy_setopt(self->curl, option, *pv ? pv : NULL);
+		}
+#ifdef CURLOPTTYPE_OFF_T
+		else if (option < CURLOPTTYPE_OFF_T) { /* A function - notreached? */
+                    		croak("Unknown curl option of type function"); 
+		}
+		else { /* A LARGE file option using curl_off_t */
+			    RETVAL = curl_easy_setopt(self->curl, option, (curl_off_t)SvIV(value));
+		}
+#endif
+                ;
                 break;
         };
     OUTPUT:
@@ -823,6 +964,21 @@ curl_easy_global_cleanup()
     CODE:
         curl_global_cleanup();
 
+SV *
+curl_easy_strerror(self, errornum)
+        WWW::Curl::Easy self
+        int errornum
+    CODE:
+	{
+#if (LIBCURL_VERSION_NUM>=0x070C00)
+	     const char * vchar = curl_easy_strerror(errornum);
+#else
+	     const char * vchar = "Unknown because curl_easy_strerror function not available}";
+#endif
+	     RETVAL = newSVpv(vchar,0);
+	}
+    OUTPUT:
+        RETVAL
 
 MODULE = WWW::Curl    PACKAGE = WWW::Curl::Form    PREFIX = curl_form_
 
@@ -925,9 +1081,10 @@ curl_multi_remove_handle(curlm, curl)
 void
 curl_multi_perform(self)
     WWW::Curl::Multi self
+    PREINIT:
+        int remaining;
     CODE:
 #ifdef __CURL_MULTI_H
-        int remaining;
         while(CURLM_CALL_MULTI_PERFORM ==
             curl_multi_perform(self->curlm, &remaining));
         while(remaining) {
@@ -957,6 +1114,100 @@ curl_multi_perform(self)
 
 void
 curl_multi_DESTROY(self)
-        WWW::Curl::Multi self
+    WWW::Curl::Multi self
     CODE:
         perl_curl_multi_delete(self);
+
+SV *
+curl_multi_strerror(self, errornum)
+        WWW::Curl::Multi self
+        int errornum
+    CODE:
+	{
+#if (LIBCURL_VERSION_NUM>=0x070C00)
+	     const char * vchar = curl_multi_strerror(errornum);
+#else
+	     const char * vchar = "Unknown because curl_multi_strerror function not available}";
+#endif
+	     RETVAL = newSVpv(vchar,0);
+	}
+    OUTPUT:
+        RETVAL
+
+MODULE = WWW::Curl    PACKAGE = WWW::Curl::Share    PREFIX = curl_share_
+
+PROTOTYPES: ENABLE
+
+int
+constant(name,arg)
+    char * name
+    int arg
+
+void
+curl_share_new(...)
+    PREINIT:
+        perl_curl_share *self;
+        char *sclass = "WWW::Curl::Share";
+    PPCODE:
+        if (items>0 && !SvROK(ST(0))) {
+            STRLEN dummy;
+            sclass = SvPV(ST(0),dummy);
+        }
+
+        self=perl_curl_share_new();
+
+        ST(0) = sv_newmortal();
+        sv_setref_pv(ST(0), sclass, (void*)self);
+        SvREADONLY_on(SvRV(ST(0)));
+
+        XSRETURN(1);
+
+void
+curl_share_DESTROY(self)
+        WWW::Curl::Share self
+    CODE:
+        perl_curl_share_delete(self);
+
+int
+curl_share_setopt(self, option, value)
+        WWW::Curl::Share self
+        int option
+        SV * value
+    CODE:
+        RETVAL=CURLE_OK;
+#if (LIBCURL_VERSION_NUM>=0x070a03)
+        switch(option) {
+            /* slist cases */
+            case CURLSHOPT_SHARE:
+            case CURLSHOPT_UNSHARE:
+                if (option < CURLOPTTYPE_OBJECTPOINT) { /* An integer value: */
+                    RETVAL = curl_share_setopt(self->curlsh, option, (long)SvIV(value));
+                } else { /* A char * value: */
+                    /* FIXME: Does curl really want NULL for empty strings? */
+                    STRLEN dummy;
+                    char *pv = SvPV(value, dummy);
+                    RETVAL = curl_share_setopt(self->curlsh, option, *pv ? pv : NULL);
+                };
+                break;
+        };
+#else
+        croak("curl_share_setopt not supported in your libcurl version");
+#endif
+    OUTPUT:
+        RETVAL
+
+SV *
+curl_share_strerror(self, errornum)
+        WWW::Curl::Share self
+        int errornum
+    CODE:
+	{
+#if (LIBCURL_VERSION_NUM>=0x070C00)
+	     const char * vchar = curl_share_strerror(errornum);
+#else
+	     const char * vchar = "Unknown because curl_share_strerror function not available}";
+#endif
+	     RETVAL = newSVpv(vchar,0);
+	}
+    OUTPUT:
+        RETVAL

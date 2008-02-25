@@ -27,10 +27,12 @@ print "1..2\n";
 print "ok ".++$count."\n";
 
 #
-# There is a slow leak per curl handle init/cleanup
-# somewhere. Demonstrated here..
+# There was a slow leak per curl handle init/cleanup
+# somewhere. Demonstrated here if you raise the number
+# of iterations e.g.:
 #
-foreach my $j (1..200) {
+# foreach my $j (1..200) {
+foreach my $j (1..2) {
 
 # Init the curl session
 my $curl = WWW::Curl::Easy->new() or die "cannot curl";
