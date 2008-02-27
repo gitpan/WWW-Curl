@@ -5,6 +5,7 @@ README
 Curl.xs
 typemap
 Easy.pm.in
+Share.pm.in
 lib/WWW/Curl.pm
 lib/WWW/Curl/Form.pm
 lib/WWW/Curl/Multi.pm

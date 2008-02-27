@@ -1,4 +1,7 @@
 Revision history for Perl extension WWW::Curl.
+3.12 Wed Feb 27 2008: - Cris Bailiff <c.bailiff+curl at devsecure.com>
+    - New Share.pm.in was missed from the MANIFEST, so was not in the distribution. Fixed.
+
 3.11 Mon Feb 25 2008: - Cris Bailiff <c.bailiff+curl at devsecure.com>
     - Merge recent contributions.
     - Updates from various small bug/build reports

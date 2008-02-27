@@ -1,7 +1,7 @@
 #!perl
 
 #
-# $Id: 20basic-back-func.t,v 1.3 2004/04/20 13:23:58 crisb Exp $
+# $Id: 20basic-back-func.t,v 1.4 2008-02-27 10:13:33 crisb Exp $
 #
 # Test script for back compatability for Curl::easy in WWW::Curl::easy
 # Test calling Curl::easy in the function style

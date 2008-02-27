@@ -5,7 +5,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '3.11';
+    $VERSION = '3.12';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -30,7 +30,9 @@ WWW::Curl - Perl extension interface for libcurl
 WWW::Curl is a Perl extension interface for libcurl.
 See WWW::Curl::Easy and WWW::Curl::Multi for more documentation.
 
-=head1 AUTHOR
+=head1 CHANGES
+
+Version 3.12 is a bugfix for a missing Share.pm.in file in the release.
 
 Version 3.10 adds the WWW::Curl::Share interface by Anton Federov
 and large file options after a contribution from Mark Hindley.
@@ -45,11 +47,13 @@ by Sebastian Riedel <sri at cpan.org>
 Version 2.00 of WWW::Curl::easy is a renaming of the previous version
 (named Curl::easy), to follow CPAN naming guidelines, by Cris Bailiff.
 
+=head1 AUTHOR
+
 Currently maintained by Cris Bailiff <c.bailiff+curl at devsecure.com>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2003,2004,2005 Cris Bailiff
+Copyright (C) 2003,2004,2005,2008 Cris Bailiff
  
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is furnished
@@ -58,4 +62,4 @@ pick one of these licenses.
 
 =head1 SEE ALSO
 
-WWW::Curl::Easy, WWW::Curl::Multi, http://curl.haxx.se
+WWW::Curl::Easy, WWW::Curl::Multi, WWW::Curl::Share http://curl.haxx.se

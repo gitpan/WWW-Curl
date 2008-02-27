@@ -27,25 +27,32 @@ my @includes = qw(
 );
 
 #
-# Get curl to tell us where it is, if we can
+# Get curl to tell us where it is, if we can. May well not find anything on Windows
 #
 my $cflags = `curl-config --cflags`;
 my $lflags = `curl-config --libs`;
+
+# can't find link flags, make some guesses
+if (!defined($lflags)) {
+    $lflags="-lcurl";
+    # Windows version of libcurl - not widely tested, feedback welcome!
+    if ($^O eq 'MSWin32') {
+	foreach my $try (@includes) {
+	    if (-f $try . '\lib\libcurl_imp.lib') {
+		$lflags = $try . '\lib\libcurl_imp.lib' unless(-f $lflags);
+		last;
+		}
+	}
+        $lflags="libcurl.lib" unless ($lflags);
+    }
+    print "Guessing your linker flags as: $lflags\n";
+}
 
 if ($lflags !~ m/curl/i) {
     # curl7.8 doesn't include itself in the link flags
     $lflags .= " -lcurl"
 }
 
-# can't find link flags, make some guesses
-if (!defined($lflags)) {
-    $lflags="-lcurl";
-    # Windows version of libcurl - not tested, feedback welcome!
-    if ($^O eq 'MSWin32') {
-        $lflags="libcurl.lib";
-    }
-    print "Guessing your linker flags as: $lflags\n";
-}
 
 my ($flag) = ($cflags =~ m/-I(\S+)/);
 
@@ -63,7 +70,7 @@ my $curl_h;
 
 # otherwise try a list of common locations
 foreach my $try (@includes) {
-    if (-e $try . "/curl/curl.h") {
+    if (-f $try . "/curl/curl.h") {
         $curl_d = $try;
         $curl_h = $try . "/curl/curl.h";
         last;
