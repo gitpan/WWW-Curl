@@ -1,71 +1,45 @@
 #!perl
 
-######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
 use strict;
-use ExtUtils::MakeMaker qw(prompt);
+use warnings;
+use Test::More tests => 14;
 
-END {print "not ok 1\n" unless $::loaded;}
-use WWW::Curl::Easy;
+BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
-$::loaded = 1;
-
-######################### End of black magic.
-
-my $count=0;
-
-# Read URL to get, defaulting to environment variable if supplied
-my $defurl=$ENV{CURL_TEST_URL} || "http://www.google.com/";
-my $url = prompt("# Please enter an URL to fetch",$defurl);
-if (!$url) {
-    print "1..0 # No test URL supplied - skipping test\n";
-    exit;
-}
-
-print "1..6\n";
-print "ok ".++$count."\n";
+my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
-if ($curl == 0) {
-    print "not ";
-}
-print "ok ".++$count."\n";
+ok($curl, 'Curl session initialize returns something');
+ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the WWW::Curl::Easy module');
 
-$curl->setopt(CURLOPT_NOPROGRESS, 1);
-$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
-$curl->setopt(CURLOPT_TIMEOUT, 30);
+ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
+ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
+ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-open HEAD, ">head.out";
-$curl->setopt(CURLOPT_WRITEHEADER, *HEAD);
-print "ok ".++$count."\n";
+open (HEAD, "+>", undef);
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
 
-open BODY, ">body.out";
-$curl->setopt(CURLOPT_FILE,*BODY);
-print "ok ".++$count."\n";
+open (BODY, "+>", undef);
+ok(! $curl->setopt(CURLOPT_WRITEDATA,*BODY), "Setting CURLOPT_WRITEDATA");
 
-$curl->setopt(CURLOPT_URL, $url);
+ok(! $curl->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 
-print "ok ".++$count."\n";
-# Add some additional headers to the http-request:
 my @myheaders;
 $myheaders[0] = "Server: www";
 $myheaders[1] = "User-Agent: Perl interface for libcURL";
-$curl->setopt(CURLOPT_HTTPHEADER, \@myheaders);
-                                                                        
-# Go get it
-my $retcode=$curl->perform();
-if ($retcode == 0) {
-    my $bytes=$curl->getinfo(CURLINFO_SIZE_DOWNLOAD);
-#    print STDERR "$bytes bytes read ";
-    my $realurl=$curl->getinfo(CURLINFO_EFFECTIVE_URL);
-    my $httpcode=$curl->getinfo(CURLINFO_HTTP_CODE);
-#    print STDERR "effective fetched url (http code: $httpcode) was: $url ";
-} else {
-   # We can acces the error message in $errbuf here
-#    print STDERR "$retcode / ".$curl->errbuf."\n";
-    print "not ";
-}
-print "ok ".++$count."\n";
-exit;
+ok(! $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders), "Setting CURLOPT_HTTPHEADER");
+
+my $retcode = $curl->perform();
+
+ok(! $retcode, "Curl return code ok");
+
+my $bytes = $curl->getinfo(CURLINFO_SIZE_DOWNLOAD);
+ok( $bytes, "getinfo returns non-zero number of bytes");
+my $realurl = $curl->getinfo(CURLINFO_EFFECTIVE_URL);
+ok( $realurl, "getinfo returns CURLINFO_EFFECTIVE_URL");
+my $httpcode = $curl->getinfo(CURLINFO_HTTP_CODE);
+ok( $httpcode, "getinfo returns CURLINFO_HTTP_CODE");
+#diag ("Bytes: $bytes");
+#diag ("realurl: $realurl");
+#diag ("httpcode: $httpcode");

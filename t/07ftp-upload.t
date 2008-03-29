@@ -1,24 +1,16 @@
 #!perl
 
-######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
 use strict;
+use warnings;
+use Test::More skip_all => "Not performing ftp upload tests";
 
-END {print "not ok 1\n" unless $::loaded;}
-use WWW::Curl::Easy;
-
-$::loaded = 1;
-
-######################### End of black magic.
+BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
 my $count=1;
 
-use ExtUtils::MakeMaker qw(prompt);
 
 # Read URL to get, defaulting to environment variable if supplied
-my $defurl=$ENV{CURL_TEST_URL_FTP} || "";
-my $url = prompt("# Please enter an ftp URL to fetch",$defurl);
+my $url=$ENV{CURL_TEST_URL_FTP} || "";
 if (!$url) {
     print "1..0 # No test ftp URL supplied - skipping test\n";
     exit;

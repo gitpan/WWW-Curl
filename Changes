@@ -1,4 +1,17 @@
 Revision history for Perl extension WWW::Curl.
+
+4.00 Wed Mar 05 2008: - Balint Szilakszi <szbalint at cpan.org>
+    - Rewritten documentation.
+    - New test suite.
+    - New build system: using Module::Install instead of ExtUtils::Makemaker.
+    - New minimal requirements, Perl 5.6 and libcurl 7.10.8.
+    - New WWW::Curl::Multi interface.
+    - Removed WWW::Curl::easy.
+    - Removed compatibility code for pre 7.10.8 libcurl.
+    - Added lots of small improvements to setopt and friends.
+    - Bugfixes, mainly for memory leaks.
+    - SIGNATURE.
+
 3.12 Wed Feb 27 2008: - Cris Bailiff <c.bailiff+curl at devsecure.com>
     - New Share.pm.in was missed from the MANIFEST, so was not in the distribution. Fixed.
 

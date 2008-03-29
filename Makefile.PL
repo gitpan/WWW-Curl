@@ -1,20 +1,23 @@
-# Makefile.PL for Perl extension WWW::Curl::easy.
-# Check out the file README for more info.
+# Makefile.PL for Perl module WWW::Curl
+# Check out the README file for more information.
 
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-#
+name			'WWW-Curl';
+abstract		'Perl extension interface for libcurl';
+author			'Cris Bailiff <c.bailiff+curl at devsecure.com>';
+license			'MPL or MIT/X-derivate';
+perl_version		'5.006';
+no_index		directory => 'template';
+# This is a hack. If you have libcurl installed, just specify curl.h below
+# and comment out this line.
+requires_external_bin	'curl-config';
+
 # This utility helper generates the constants function from curl.h
-#
 # It is normally only used by the maintainer, but if you're curl is older
 # or missing some constants, you can delete curlopt-constants.c and re-run 'perl Makefile.PL'
-#
-
-#
 # You may need to specify where to find curl.h on your platform
-# These are guesses only
+# These are guesses only, in case curl-config is not telling us.
 #
 
 my @includes = qw(
@@ -47,12 +50,6 @@ if (!defined($lflags)) {
     }
     print "Guessing your linker flags as: $lflags\n";
 }
-
-if ($lflags !~ m/curl/i) {
-    # curl7.8 doesn't include itself in the link flags
-    $lflags .= " -lcurl"
-}
-
 
 my ($flag) = ($cflags =~ m/-I(\S+)/);
 
@@ -92,8 +89,12 @@ if (!defined($curl_h)) {
         if ($_ =~ m/CINIT\(/ and $_ !~ m/#/) {
             my ($option, $type, $code) =
                 m/.*CINIT\((\w*)\s*,\s*(\w+)\s*,\s*(\d+).*/;
-            $cinit_types{$option} = $type;
+            $cinit_types{$option} = $option;
             $cinit_codes{$option} = $code;
+	} elsif ($_ =~ m/^#define CURLOPT_\w+ CURLOPT_\w+/) {
+            my ($option, $value) =
+                m/^#define CURLOPT_(\w+) CURLOPT_(\w+)/;
+            $cinit_types{$option} = $value;
         } elsif ($_ =~ m/^\s*(CURLINFO_\w+)/) {
             push @curlinfo, $1;
         } elsif ($_ =~ m/^\s*(CURLSHOPT_\w+)/) {
@@ -166,7 +167,7 @@ HERE2
             if ($next_initial eq $initial) {
 
                 print CURL_XS
-"            if (strEQ(name, \"$option\")) return CURLOPT_$option;\n";
+"            if (strEQ(name, \"$option\")) return CURLOPT_$cinit_types{$option};\n";
 
                 $count++;
             }
@@ -251,7 +252,7 @@ HERE
     print "Building Easy.pm constants for your libcurl version\n";
 
     open(EASY_PM,    ">lib/WWW/Curl/Easy.pm")    or die "Can't create lib/WWW/Curl/Easy.pm\n";
-    open(EASY_PM_IN, "Easy.pm.in") or die "Can't read Easy.pm.in\n";
+    open(EASY_PM_IN, "template/Easy.pm.tmpl") or die "Can't read template/Easy.pm.tmpl\n";
     while (my $line = <EASY_PM_IN>) {
         if ($line !~ m/^\@CURLOPT_INCLUDE\@/) {
 			print EASY_PM $line;
@@ -271,7 +272,7 @@ HERE
 	print "Building Share.pm constants for your libcurl version\n";
 
     open(SHARE_PM,   ">lib/WWW/Curl/Share.pm")    or die "Can't create lib/WWW/Curl/Share.pm\n";
-    open(SHARE_PM_IN, "Share.pm.in") or die "Can't read Share.pm.in\n";
+    open(SHARE_PM_IN, "template/Share.pm.tmpl") or die "Can't read template/Share.pm.tmpl\n";
     while (my $line = <SHARE_PM_IN>) {
         if ($line !~ m/^(.*?)\@CURLSHOPT_INCLUDE\@/) {
             print SHARE_PM $line;
@@ -288,14 +289,12 @@ HERE
     close(SHARE_PM_IN);
 }
 
-#
-# Now write the makefile
-#
+# Let Module::Install generate META.yml and other necessary files.
 WriteMakefile(
     'NAME'         => 'WWW::Curl',
     'VERSION_FROM' => 'lib/WWW/Curl.pm',      # finds $VERSION
     'LIBS'         => $lflags,        # e.g., '-lm'
     'INC'          => $curl_d,        # e.g., '-I/usr/include/other'
-    'clean' => { FILES => "head.out body.out" }
+    'clean' => { FILES => "curlopt-constants.c head.out body.out" }
 );
 

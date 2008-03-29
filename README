@@ -8,7 +8,7 @@ installed. You then may install this module via the usual way:
 
     perl Makefile.PL
     make
-    make test # NEEDS CONFIGURATION - see note below
+    make test
     make install
 
 The Makefile.PL script will try to use the 'curl-config' command to find
@@ -18,28 +18,23 @@ an explicit path when building the Makefile:
 
     perl Makefile.PL /home/foo/curl/include
 
-The maintainer has never tried to run this on windows, so all feedback welcome.
+Minimum version requirements:
 
-Testing:
- 
-'make test' will only run if you have a suitable test web server somewhere - 
-the 'printenv' script commonly distributed with apache on linux is useable, for
-example.  You need to set the environment variable CURL_TEST_URL to the URL
-of such a script and set the environment variable PERL_MM_USE_DEFAULT=1 for 'make test'
-to work automatically.
+This module, starting from version 4 requires at least Perl 5.6 and libcurl 7.10.8.
+These releases are more than 5 years old and they have multiple security vulnerabilities,
+it is advised that you upgrade as soon as possible to a more recent, secure version.
+Anything older than these versions of Perl and libcurl respectively are not supported.
 
-Test 08ssl.t will only work well if you have a list of "well-known"
-CA certificates in the file 'ca-bundle.crt' in the current directory.
-This file can be obtained from most distributions of mod_ssl (www.modssl.org) -
-it isn't supplied here, as its currently >250Kbytes.
+Windows specific fixes and patches are welcome as testing is mainly focused on linux.
 
-The module provides the same functionality as libcurl provides to C programs,
-please refer to the documentation of libcurl. A number of examples may be
-found in t/*.t and examples/ directories.
+The module provides the same functionality, except as noted in the documentation, 
+as libcurl provides to C programs. Please refer to the documentation of libcurl for the
+general interface description and the WWW::Curl POD for the differences.
 
 This software is distributed AS IS, WITHOUT WARRANTY OF ANY KIND, either
-express or implied. Send praise, patches, money, beer and pizza to the author.
-Send complaints to /dev/null. ;-)
+express or implied.
+
+History:
 
 The author of the original relase of this software is Georg Horn <horn at koblenz-net.de>
 
@@ -56,9 +51,8 @@ The current maintainer is Cris Bailiff <c.bailiff+curl at devsecure.com>
 The latest version can be downloaded from http://curl.haxx.se/libcurl/perl/ or
 found on CPAN as the module WWW::Curl
  
-Copyright (C) 2000-2005, Daniel Stenberg, Cris Bailiff , et al.  
+Copyright (C) 2000-2005, 2008 Daniel Stenberg, Cris Bailiff , et al.  
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is
 furnished to do so, under the terms of the MPL or the MIT/X-derivate 
 licenses. You may pick one of these licenses.
-

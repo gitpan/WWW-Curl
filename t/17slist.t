@@ -1,5 +1,7 @@
 #!perl
 
+use Test::More skip_all => "Not performing printenv cgi tests";
+
 ######################### We start with some black magic to print on failure.
 
 # Change 1..1 below to 1..last_test_to_print .

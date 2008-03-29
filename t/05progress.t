@@ -1,91 +1,53 @@
 #!perl
 
-######################### We start with some black magic to print on failure.
-
 use strict;
+use warnings;
+use Test::More tests => 16;
 
-END {print "not ok 1\n" unless $::loaded;}
-use WWW::Curl::Easy;
+BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
-$::loaded = 1;
-
-######################### End of black magic.
-
-my $count=0;
-
-
-use ExtUtils::MakeMaker qw(prompt);
-
-# Read URL to get, defaulting to environment variable if supplied
-my $defurl=$ENV{CURL_TEST_URL} || "http://www.google.com/";
-my $url = prompt("# Please enter an URL to fetch",$defurl);
-if (!$url) {
-    print "1..0 # No test URL supplied - skipping test\n";
-    exit;
-}
-
-print "1..9\n";
-
-print "ok ".++$count."\n";
+my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
-if ($curl == 0) {
-    print "not ";
-}
-print "ok ".++$count."\n";
+ok($curl, 'Curl session initialize returns something');
+ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the WWW::Curl::Easy module');
 
-$curl->setopt(CURLOPT_NOPROGRESS, 1);
-$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
-$curl->setopt(CURLOPT_TIMEOUT, 30);
+ok(! $curl->setopt(CURLOPT_NOPROGRESS, 0), "Setting CURLOPT_NOPROGRESS");
+ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
+ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-open HEAD, ">head.out";
-$curl->setopt(CURLOPT_WRITEHEADER, *HEAD);
-print "ok ".++$count."\n";
+open (HEAD, "+>", undef);
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
 
-open BODY, ">body.out";
-$curl->setopt(CURLOPT_FILE,*BODY);
-print "ok ".++$count."\n";
+open (BODY, "+>", undef);
+ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE");
 
-$curl->setopt(CURLOPT_URL, $url);
+ok(! $curl->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 
-print "ok ".++$count."\n";
+my @myheaders;
+$myheaders[0] = "Server: www";
+$myheaders[1] = "User-Agent: Perl interface for libcURL";
+ok(! $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders), "Setting CURLOPT_HTTPHEADER");
 
-$curl->setopt(CURLOPT_NOPROGRESS, 0);
-print "ok ".++$count."\n";
+ok(! $curl->setopt(CURLOPT_PROGRESSDATA,"making progress!"), "Setting CURLOPT_PROGRESSDATA");
 
-# inline progress function
-# tests for inline subs and progress callback
-# - progress callback must return 'true' on each call.
-
-$curl->setopt(CURLOPT_PROGRESSDATA,"making progress!");
-
-my $progress_called;
-my $last_dlnow=0;
+my $progress_called = 0;
+my $last_dlnow = 0;
 sub prog_callb
 {
     my ($clientp,$dltotal,$dlnow,$ultotal,$ulnow)=@_;
-#    print STDERR "\nperl progress_callback has been called!\n";
-#    print STDERR "clientp: $clientp, dltotal: $dltotal, dlnow: $dlnow, ultotal: $ultotal, ";
-#    print STDERR "ulnow: $ulnow\n";
     $last_dlnow=$dlnow;
     $progress_called++;
     return 0;
 }                        
 
-$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&prog_callb);
+ok (! $curl->setopt(CURLOPT_PROGRESSFUNCTION, \&prog_callb), "Setting CURLOPT_PROGRESSFUNCTION");
 
-# Turn progress meter back on - this doesnt work in older libcurls -  once its off, its off.
-$curl->setopt(CURLOPT_NOPROGRESS, 0);
+ok (! $curl->setopt(CURLOPT_NOPROGRESS, 0), "Turning progress meter back on");
 
-if ($curl->perform() != 0) {
-	print "not ";
-};
-print "ok ".++$count."\n";
+ok (! $curl->perform(), "Performing perform");
 
-print "not " if (!$progress_called);
-print "ok ".++$count."\n";
+ok ($progress_called, "Progress callback called");
 
-print "not " if ($last_dlnow == 0);
-print "ok ".++$count."\n";
-
+ok ($last_dlnow, "Last downloaded chunk non-zero");

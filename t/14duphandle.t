@@ -1,73 +1,70 @@
 #!perl
 
-######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
 use strict;
+use warnings;
+use lib 'inc';
+use lib 'blib/lib';
+use lib 'blib/arch';
+use Test::More tests => 17;
 
-END {print "not ok 1\n" unless $::loaded;}
-use WWW::Curl::Easy;
+BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
-$::loaded = 1;
+my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 
-######################### End of black magic.
+{
+my $other_handle;
 
-my $count=0;
-
-use ExtUtils::MakeMaker qw(prompt);
-
-# Read URL to get, defaulting to environment variable if supplied
-my $defurl=$ENV{CURL_TEST_URL} || "http://www.google.com/";
-my $url = prompt("# Please enter an URL to fetch",$defurl);
-if (!$url) {
-    print "1..0 # No test URL supplied - skipping test\n";
-    exit;
-}
-print "1..7\n";
-print "ok ".++$count."\n";
-
+{
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
-if ($curl == 0) {
-    print "not ";
-}
-print "ok ".++$count."\n";
+ok($curl, 'Curl session initialize returns something');
+ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the WWW::Curl::Easy module');
 
-$curl->setopt(CURLOPT_NOPROGRESS, 1);
-$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
-$curl->setopt(CURLOPT_TIMEOUT, 30);
+ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
+ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
+ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-open HEAD, ">head.out";
-$curl->setopt(CURLOPT_WRITEHEADER, *HEAD);
-print "ok ".++$count."\n";
+open (HEAD, "+>", undef);
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
 
-open BODY, ">body.out";
-$curl->setopt(CURLOPT_FILE,*BODY);
-print "ok ".++$count."\n";
+open (BODY, "+>", undef);
+ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE");
 
-$curl->setopt(CURLOPT_URL, $url);
+ok(! $curl->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 
-print "ok ".++$count."\n";
-# Add some additional headers to the http-request:
 my @myheaders;
 $myheaders[0] = "Server: www";
 $myheaders[1] = "User-Agent: Perl interface for libcURL";
-$curl->setopt(CURLOPT_HTTPHEADER, \@myheaders);
+ok(! $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders), "Setting CURLOPT_HTTPHEADER");
 
 # duplicate the handle
-my $other_handle=$curl->duphandle();
+$other_handle = $curl->duphandle();
+ok ($other_handle && ref($other_handle) eq 'WWW::Curl::Easy', "Duplicated handle seems to be an object in the right namespace");
 
-# Go get it
-#foreach my $x ($other_handle,$curl) {
 foreach my $x ($other_handle,$curl) {
-    my $retcode=$x->perform();
+    my $retcode = $x->perform();
+    ok(!$retcode, "Perform returns without an error");
     if ($retcode == 0) {
 	my $bytes=$x->getinfo(CURLINFO_SIZE_DOWNLOAD);
 	my $realurl=$x->getinfo(CURLINFO_EFFECTIVE_URL);
 	my $httpcode=$x->getinfo(CURLINFO_HTTP_CODE);
-    } else {
-	print "not ";
     }
-    print "ok ".++$count."\n";
 }
+}
+
+ok(1, "Survived original curl handle DESTROY");
+
+ok(! $other_handle->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
+my $retcode = $other_handle->perform();
+ok(!$retcode, "Perform returns without an error");
+if ($retcode == 0) {
+	my $bytes=$other_handle->getinfo(CURLINFO_SIZE_DOWNLOAD);
+	my $realurl=$other_handle->getinfo(CURLINFO_EFFECTIVE_URL);
+	my $httpcode=$other_handle->getinfo(CURLINFO_HTTP_CODE);
+}
+
+
+
+}
+ok(1, "Survived dup curl handle DESTROY");
 exit;

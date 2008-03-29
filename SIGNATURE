@@ -1,0 +1,72 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.55.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 54b1bb8eb9bb01d6ff2a298a029ed38e0682a14f Changes
+SHA1 3e5110b2eae79a319fa4ac75b422b06e39aa362e Curl.xs
+SHA1 7453f723c59e4a9f79f7c815834ce45ca350094a MANIFEST
+SHA1 478302b3c089c33cb964d77cb8c2a2edaaa99cc3 META.yml
+SHA1 b795e53a9fb6af1ed23957829bd7019d678c65ba Makefile.PL
+SHA1 ee5ac8926c73fa624e8ef8908a52a8b3bc5bee3b README
+SHA1 7e2cfa1b9efe0d502ee57717649c90ba4bd28ba9 inc/Module/Install.pm
+SHA1 6e1392d80a0f239eecd5664f7f21f922cedb9329 inc/Module/Install/Base.pm
+SHA1 f69417fe831d9cc22a78f00a617afadceade4d81 inc/Module/Install/Can.pm
+SHA1 28ca3fb2b80c221742bb7c4939d48cf23cadfcc5 inc/Module/Install/External.pm
+SHA1 8a5b53d30553243bebb15943bc7c26679a0de17c inc/Module/Install/MakeMaker.pm
+SHA1 54fcbed19232ec959bb17cfb4410599afc7f0779 inc/Module/Install/Makefile.pm
+SHA1 7d3be9b158e37b2b2c22084740099955623b1d56 inc/Module/Install/Metadata.pm
+SHA1 7af82fbd110bc54366c2173e299dcf53309ebb19 lib/WWW/Curl.pm
+SHA1 7a8a821b05a4ec9c3a2efa075d0e300f7b7d9e3c lib/WWW/Curl/Easy.pm
+SHA1 5909923d44832d435213746d562bf6b6075f5ef3 lib/WWW/Curl/Form.pm
+SHA1 46e9ebfbe386bbf319f26e6d3eec7e17772026b5 lib/WWW/Curl/Multi.pm
+SHA1 51efe8d02da567645a0903df6972f2a92a8f4976 lib/WWW/Curl/Share.pm
+SHA1 259c953ed6189b23fddd5d4afd2c6df0fbb24930 t/00constants.t
+SHA1 773c8d5c8abc1c0fe21519366dab29cdb2f8ea4a t/01basic.t
+SHA1 3355b049165b1e1aa0af648ce8f44692f1f88e3d t/02callbacks.t
+SHA1 c186f3f4f13e113722053cb9b81ad2bdf857ad18 t/04abort-test.t
+SHA1 df17c51fa2ce4fed082d0396954a43e708d958b1 t/05progress.t
+SHA1 a751ce8058ed1d854e61c0a9345d06c66a72b85a t/06http-post.t
+SHA1 b52ca8c1e0cf76fa2297936a96dd4f2285b61d6d t/07ftp-upload.t
+SHA1 b238bf0e4db361722b2ed4abd70db634c9ba821b t/08ssl.t
+SHA1 440948e14cd42a4a0e8c3e25017f26a123f7f2f6 t/09times.t
+SHA1 aaccb891419eeacb3ba43653d7e81530779e1bb0 t/10errbuf.t
+SHA1 cc84e1b68e68c6bccc2cbec3de51d21ca2f6f204 t/13slowleak.t
+SHA1 556b3b163931d54a57c6d863e4c1caff9fdd10f7 t/14duphandle.t
+SHA1 5e632382dea96d46b0b9121ef11a2377dbff3abc t/15duphandle-callback.t
+SHA1 785507b3fa6f414298cdcf7ceaba1f9274aa07d2 t/16formpost.t
+SHA1 29844779329a8ad659e4e5445ae5b9a65fee7db1 t/17slist.t
+SHA1 4246e503682d25acf461e539104d10b66e74889c t/18twinhandles.t
+SHA1 3cd20c1711b43058550922404f53a844fb2695e6 t/new/00constants.t
+SHA1 d9863d2e71f618a58d419534867cda8bd97dcfbf t/new/01basic.t
+SHA1 f4a3ea4777e0905d2cf0f6cdb18d04a39892c69d t/new/02header-callback.t
+SHA1 4aa1ab99c68aa4069a37419f439520b639fdb1e6 t/new/03body-callback.t
+SHA1 1470b63fda40ae09ce5faa891b6b30d804709c93 t/new/04abort.t
+SHA1 0d80cbde8d56c32ada4284f4738357cce1346b2b t/new/05progress.t
+SHA1 fda1cb27df8d45a6e00fb0f1ca664b815a5d9b47 t/new/06http-post.t
+SHA1 66c9b543a13c328a5b49b79d29aaa6345702ec71 t/new/07errbuf.t
+SHA1 63aecf6590d0d4268be8f23ba406d5b957710cde t/new/08duphandle.t
+SHA1 a20c28c3e06ebf836e837da4c5d1afb2998d5cc7 t/new/09duphandle-callback.t
+SHA1 eee30cfb57132e7c8bdd4a5dd2f32273ab222115 t/new/10multi-callback.t
+SHA1 20ec0bd03ff2600505d38623153a6eb3087b5814 t/new/README
+SHA1 923c82ffd9b3759022988395b292d4ca10cbf80f template/Easy.pm.tmpl
+SHA1 0b5ef1bf34b3402bec9009aea298367e62d4675a template/Share.pm.tmpl
+SHA1 468b011caaf4d54609b421027d7c6262a9260e89 typemap
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFHzvYz+22TSbOiiI8RAk0DAJ4ji4E7CLJmnTgFo7CJFbPauEg4tACfckRv
+z4S8GNODcIj8l3rJa+Xxryc=
+=Fq1H
+-----END PGP SIGNATURE-----
