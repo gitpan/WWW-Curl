@@ -34,6 +34,8 @@ my @includes = qw(
 #
 my $cflags = `curl-config --cflags`;
 my $lflags = `curl-config --libs`;
+my $libcurl_version = `curl-config --version`;
+print "version is $libcurl_version";
 
 # can't find link flags, make some guesses
 if (!defined($lflags)) {

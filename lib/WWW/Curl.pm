@@ -5,7 +5,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.00';
+    $VERSION = '4.01';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -13,8 +13,6 @@ BEGIN {
 1;
 
 __END__
-
-=cut 
 
 =head1 NAME
 
@@ -99,19 +97,20 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 	$curlm->add_handle($curl);
 	$active_handles++;
 
-	while (my $active_transfers = $curlm->perform) {
-	if ($active_transfers != $active_handles) {
-		while (my ($id,$return_value) = $curlm->info_read) {
-			if ($id) {
-				$active_handles--;
-				my $actual_easy_handle = $easy{$id};
-				# do the usual result/error checking routine here
-				...
-				# letting the curl handle get garbage collected, or we leak memory.
-				delete $easy{$id};
+	while ($active_handles) {
+		my $active_transfers = $curlm->perform;
+		if ($active_transfers != $active_handles) {
+			while (my ($id,$return_value) = $curlm->info_read) {
+				if ($id) {
+					$active_handles--;
+					my $actual_easy_handle = $easy{$id};
+					# do the usual result/error checking routine here
+					...
+					# letting the curl handle get garbage collected, or we leak memory.
+					delete $easy{$id};
+				}
 			}
 		}
-	}
 	}
 
 This interface is different than what the C API does. $curlm->perform is non-blocking and performs
@@ -281,6 +280,8 @@ a large number of downloads and wrap the resulting data into a Perl-friendly str
 HTTP::Response.
 
 =head1 CHANGES
+
+Version 4.01 adds several bugfixes. See Changes file.
 
 Version 4.00 added new documentation, the build system changed to Module::Install,
 the test suite was rewritten to use Test::More, a new calling syntax for WWW::Curl::Multi

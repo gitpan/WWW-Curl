@@ -39,18 +39,18 @@ if (&WWW::Curl::Easy::version() !~ /ssl/i) {
 
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
-ok($curl, 'Curl session initialize returns something');
-ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the WWW::Curl::Easy module');
+ok($curl, 'Curl session initialize returns something'); #1
+ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the WWW::Curl::Easy module'); #2
 
-ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
-ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
-ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
+ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS"); #3
+ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION"); #4
+ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT"); #5
 
 open (HEAD, "+>", undef);
-ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER"); #6
 
 open (BODY, "+>", undef);
-ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE");
+ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE"); #7
 
 my @myheaders;
 $myheaders[0] = "User-Agent: Verifying SSL functions in WWW::Curl perl interface for libcURL";
@@ -61,6 +61,9 @@ $curl->setopt(CURLOPT_FRESH_CONNECT, 1);
 #$curl->setopt(CURLOPT_SSL_CIPHER_LIST, "HIGH:MEDIUM");
 
 $curl->setopt(CURLOPT_CAINFO,"ca-bundle.crt");                       
+$curl->setopt(CURLOPT_DEBUGFUNCTION, \&silence);
+
+sub silence { return 0 }
 
 my $count = 1;
 
@@ -82,6 +85,7 @@ for my $test_list (@$url_list) {
 
     $curl->setopt(CURLOPT_URL, $url);
 
-    $retcode=$curl->perform();
+    $retcode = $curl->perform();
     ok(($retcode != 0) == $result, "$url ssl test succeeds");
 }
+

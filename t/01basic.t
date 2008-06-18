@@ -8,6 +8,7 @@ BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
 my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 
+my $memfile = '';
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
 ok($curl, 'Curl session initialize returns something');
@@ -17,8 +18,10 @@ ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
 ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
 ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-open (HEAD, "+>", undef);
+my $headvar = '';
+open (HEAD, ">", \$headvar);
 ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
+
 
 open (BODY, "+>", undef);
 ok(! $curl->setopt(CURLOPT_WRITEDATA,*BODY), "Setting CURLOPT_WRITEDATA");

@@ -33,6 +33,9 @@ t/15duphandle-callback.t
 t/16formpost.t
 t/17slist.t
 t/18twinhandles.t
+t/meta.t
+t/pod-coverage.t
+t/pod.t
 t/new/00constants.t
 t/new/01basic.t
 t/new/02header-callback.t
