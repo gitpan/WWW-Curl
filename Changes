@@ -1,4 +1,8 @@
 Revision history for Perl extension WWW::Curl.
+4.02 Thu Jun 19 2008: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Adding forgotten backwards compatibility with older Perl versions
+
 4.01 Wed Jun 18 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Reimplemented callback handling to fix several I/O issues (fixes RT #35491)

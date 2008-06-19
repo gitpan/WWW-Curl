@@ -4,7 +4,7 @@ use strict;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 
-$VERSION = '4.01';
+$VERSION = '4.02';
 
 require WWW::Curl;
 require Exporter;

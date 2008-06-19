@@ -21,6 +21,11 @@
 
 #define header_callback_func writeheader_callback_func
 
+/* Do a favor for older perl versions */
+#ifndef Newxz
+#    define Newxz(v,n,t)                   Newz(0,v,n,t)
+#endif
+
 typedef enum {
     CALLBACK_WRITE = 0,
     CALLBACK_READ,

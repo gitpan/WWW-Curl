@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 a6723187bdc2d57765b2538c931b0f0cc2842225 Changes
-SHA1 08c2b4487ea387d68be5cfa2551110e1bc5cefe7 Curl.xs
+SHA1 d1f706098c769aaaa3164d0bb948bd04f54ff88b Changes
+SHA1 915add7d9f076554af1aeb6d5dc5bfcaa3a5d8f8 Curl.xs
 SHA1 63693eb209d0c6f82eb1f64b88c03e599351ad67 MANIFEST
-SHA1 1161dc0c9e3b3c52ec22fe32e025aa33cbdc00f9 META.yml
+SHA1 8fec320fca32f30fa861fe47d0c295ac11624876 META.yml
 SHA1 dd94c543211c36c471c150ef3f7ba106fd2e8fe8 Makefile.PL
 SHA1 ee5ac8926c73fa624e8ef8908a52a8b3bc5bee3b README
 SHA1 f0577f8f88a6703e9bca2d10196cfd293f3d6f2f inc/Module/Install.pm
@@ -27,8 +27,8 @@ SHA1 dd345661caea9a4f18c6f39cd50f22739cf2459d inc/Module/Install/External.pm
 SHA1 c8b486eb7a38823afb92e4d5b00dbb57b43351d5 inc/Module/Install/MakeMaker.pm
 SHA1 cd14c8de2a67b0f14df9bc20c27f3edabd359d1b inc/Module/Install/Makefile.pm
 SHA1 a2162aec678d21988fce47ab805cf01773196292 inc/Module/Install/Metadata.pm
-SHA1 a04aaa3ebcb2330b124629651a21f16ec3a8f6cb lib/WWW/Curl.pm
-SHA1 52d6838bb7d1111acca11e5e44f6bdd6cf8f7b58 lib/WWW/Curl/Easy.pm
+SHA1 0071735d231e92b8570b47edf162059a44c375d9 lib/WWW/Curl.pm
+SHA1 ef331feaaf370256f3ccdb3de5b9371b709c3911 lib/WWW/Curl/Easy.pm
 SHA1 5909923d44832d435213746d562bf6b6075f5ef3 lib/WWW/Curl/Form.pm
 SHA1 46e9ebfbe386bbf319f26e6d3eec7e17772026b5 lib/WWW/Curl/Multi.pm
 SHA1 51efe8d02da567645a0903df6972f2a92a8f4976 lib/WWW/Curl/Share.pm
@@ -63,13 +63,13 @@ SHA1 eee30cfb57132e7c8bdd4a5dd2f32273ab222115 t/new/10multi-callback.t
 SHA1 20ec0bd03ff2600505d38623153a6eb3087b5814 t/new/README
 SHA1 ac25bfa56d36f19cbee72a968b06372e88602a61 t/pod-coverage.t
 SHA1 0190346d7072d458c8a10a45c19f86db641dcc48 t/pod.t
-SHA1 475f5bf73ed6c1858cbad485166d2191294f9b22 template/Easy.pm.tmpl
+SHA1 379dc7ce788afdb2d765b40118483fab758ce881 template/Easy.pm.tmpl
 SHA1 0b5ef1bf34b3402bec9009aea298367e62d4675a template/Share.pm.tmpl
 SHA1 468b011caaf4d54609b421027d7c6262a9260e89 typemap
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFIWVpF+22TSbOiiI8RAmoPAJsHvXqQfvkF1b7k++gtm/Cskquz1gCfStwF
-OcXr0DORSLaw3TQzDxFXPhw=
-=fxTb
+iD8DBQFIWeSw+22TSbOiiI8RAug7AJ4wrFP36N8DyneTjUp5+KneqceiIQCfVUzC
+1nJYo3gh61X1LlY5cbrI7L0=
+=tiB5
 -----END PGP SIGNATURE-----
