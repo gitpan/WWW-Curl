@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Test::More tests => 7;
+use File::Temp qw/tempfile/;
 
 BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
@@ -17,11 +18,11 @@ $curl->setopt(CURLOPT_NOPROGRESS, 1);
 $curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
-open (HEAD, "+>", undef);
-$curl->setopt(CURLOPT_WRITEHEADER, *HEAD);
+my $head = tempfile();
+$curl->setopt(CURLOPT_WRITEHEADER, $head);
 
-open (BODY, "+>", undef);
-$curl->setopt(CURLOPT_FILE,*BODY);;
+my $body = tempfile();
+$curl->setopt(CURLOPT_FILE,$body);
 
 $curl->setopt(CURLOPT_URL, $url);
 

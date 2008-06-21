@@ -21,9 +21,9 @@ $curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
 open (HEAD, "+>",undef);
-WWW::Curl::Easy::setopt($curl, CURLOPT_WRITEHEADER, *HEAD);
+WWW::Curl::Easy::setopt($curl, CURLOPT_WRITEHEADER, \*HEAD);
 open (BODY, "+>, undef);
-WWW::Curl::Easy::setopt($curl, CURLOPT_FILE,*BODY);
+WWW::Curl::Easy::setopt($curl, CURLOPT_FILE, \*BODY);
 
 $curl->setopt(CURLOPT_URL, $url);
                                                                         

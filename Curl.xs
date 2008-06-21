@@ -182,7 +182,7 @@ static void perl_curl_easy_delete(perl_curl_easy *self)
 
 static void perl_curl_easy_register_callback(perl_curl_easy *self, SV **callback, SV *function)
 {
-    if (function) {	
+    if (function && SvOK(function)) {	
 	    /* FIXME: need to check the ref-counts here */
 	    if (*callback == NULL) {
 		*callback = newSVsv(function);
@@ -290,7 +290,6 @@ fwrite_wrapper (
         } else { /* just in case */
             XPUSHs(&PL_sv_undef);
         }
-
         if (call_ctx) {
             XPUSHs(sv_2mortal(newSVsv(call_ctx)));
         } else { /* should be a stdio glob ? */
@@ -683,50 +682,50 @@ curl_easy_setopt(self, option, value)
             case CURLOPT_FILE:
             case CURLOPT_INFILE:
                 perl_curl_easy_register_callback(self,
-                        &(self->callback_ctx[callback_index(option)]),SvOK(value) ? value : NULL);
+                        &(self->callback_ctx[callback_index(option)]), value);
                 break;
             case CURLOPT_WRITEHEADER:
         curl_easy_setopt(self->curl, CURLOPT_HEADERFUNCTION, SvOK(value) ? header_callback_func : NULL);
         	curl_easy_setopt(self->curl, option, SvOK(value) ? self : NULL);
                 perl_curl_easy_register_callback(self,
-                        &(self->callback_ctx[callback_index(option)]),SvOK(value) ? value : NULL);
+                        &(self->callback_ctx[callback_index(option)]),value);
                 break;
             case CURLOPT_PROGRESSDATA:
         curl_easy_setopt(self->curl, CURLOPT_PROGRESSFUNCTION, SvOK(value) ? progress_callback_func : NULL);
         	curl_easy_setopt(self->curl, option, SvOK(value) ? self : NULL); 
                 perl_curl_easy_register_callback(self,
-                        &(self->callback_ctx[callback_index(option)]),SvOK(value) ? value : NULL);
+                        &(self->callback_ctx[callback_index(option)]), value);
                 break;
             case CURLOPT_DEBUGDATA:
 	curl_easy_setopt(self->curl, CURLOPT_DEBUGFUNCTION, SvOK(value) ? debug_callback_func : NULL);
         	curl_easy_setopt(self->curl, option, SvOK(value) ? self : NULL); 
                 perl_curl_easy_register_callback(self,
-                        &(self->callback_ctx[callback_index(option)]),SvOK(value) ? value : NULL);
+                        &(self->callback_ctx[callback_index(option)]), value);
                 break;
 
             /* SV * to a subroutine ref */
             case CURLOPT_WRITEFUNCTION:
             case CURLOPT_READFUNCTION:
                perl_curl_easy_register_callback(self,
-                       &(self->callback[callback_index(option)]),SvOK(value) ? value : NULL);
+                       &(self->callback[callback_index(option)]), value);
                break;
             case CURLOPT_HEADERFUNCTION:
                curl_easy_setopt(self->curl, option, SvOK(value) ? header_callback_func : NULL);
 		curl_easy_setopt(self->curl, CURLOPT_WRITEHEADER, SvOK(value) ? self : NULL);
                perl_curl_easy_register_callback(self,
-                       &(self->callback[callback_index(option)]),SvOK(value) ? value : NULL);
+                       &(self->callback[callback_index(option)]), value);
                break;
             case CURLOPT_PROGRESSFUNCTION:
         	curl_easy_setopt(self->curl, option, SvOK(value) ? progress_callback_func : NULL);
 		curl_easy_setopt(self->curl, CURLOPT_PROGRESSDATA, SvOK(value) ? self : NULL);
                perl_curl_easy_register_callback(self,
-                       &(self->callback[callback_index(option)]),SvOK(value) ? value : NULL);
+                       &(self->callback[callback_index(option)]), value);
                break;
             case CURLOPT_DEBUGFUNCTION:
 		curl_easy_setopt(self->curl, option, SvOK(value) ? debug_callback_func : NULL);
 		curl_easy_setopt(self->curl, CURLOPT_DEBUGDATA, SvOK(value) ? self : NULL);
                perl_curl_easy_register_callback(self,
-                       &(self->callback[callback_index(option)]),SvOK(value) ? value : NULL);
+                       &(self->callback[callback_index(option)]), value);
                break;
 
             /* slist cases */

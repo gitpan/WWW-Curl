@@ -30,11 +30,11 @@ $curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
 $curl->setopt(CURLOPT_TIMEOUT, 30);
 
 open HEAD, ">head.out";
-$curl->setopt(CURLOPT_WRITEHEADER, *HEAD);
+$curl->setopt(CURLOPT_WRITEHEADER, \*HEAD);
 print "ok ".++$count."\n";
 
 open BODY, ">body.out";
-$curl->setopt(CURLOPT_FILE,*BODY);
+$curl->setopt(CURLOPT_FILE, \*body);
 print "ok ".++$count."\n";
 
 $curl->setopt(CURLOPT_URL, $url);

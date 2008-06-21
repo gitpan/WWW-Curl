@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Test::More tests => 12;
+use File::Temp qw/tempfile/;
 
 BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
@@ -17,16 +18,16 @@ ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
 ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
 ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-open (HEAD, "+>", undef);
-ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
+my $head = tempfile();
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, $head), "Setting CURLOPT_WRITEHEADER");
 
-open (BODY, "+>", undef);
-ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE");
+my $body = tempfile();
+ok(! $curl->setopt(CURLOPT_FILE, $body), "Setting CURLOPT_FILE");
 
 ok(! $curl->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 
-open (NEW_ERROR,"+>", undef);
-ok(! $curl->setopt(CURLOPT_STDERR, *NEW_ERROR), "Setting CURLOPT_STDERR");
+my $new_error = tempfile();
+ok(! $curl->setopt(CURLOPT_STDERR, $new_error), "Setting CURLOPT_STDERR");
 
 # create a (hopefully) bad URL, so we get an error
 

@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Test::More;
+use File::Temp qw/tempfile/;
 use WWW::Curl::Easy;
 
 # list of tests
@@ -46,11 +47,11 @@ ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS"); #3
 ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION"); #4
 ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT"); #5
 
-open (HEAD, "+>", undef);
-ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER"); #6
+my $head = tempfile();
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, $head), "Setting CURLOPT_WRITEHEADER"); #6
 
-open (BODY, "+>", undef);
-ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE"); #7
+my $body = tempfile();
+ok(! $curl->setopt(CURLOPT_FILE, $body), "Setting CURLOPT_FILE"); #7
 
 my @myheaders;
 $myheaders[0] = "User-Agent: Verifying SSL functions in WWW::Curl perl interface for libcURL";

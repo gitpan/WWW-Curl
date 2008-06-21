@@ -2,16 +2,25 @@
 
 use strict;
 use warnings;
+use diagnostics;
 use lib 'inc';
 use lib 'blib/lib';
 use lib 'blib/arch';
-use Test::More tests => 26;
+use Test::More;
+use File::Temp qw/tempfile/;
+
+if ($] < 5.008) {
+	plan skip_all => "duphandle doesn't work on 5.6, too old";
+} else {
+	plan tests => 25;
+}
 
 BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
 my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 my $other_handle;
-open (HEAD, "+>", undef);
+my $head = tempfile();
+my $hcall;
 {
 # Init the curl session
 my $curl = WWW::Curl::Easy->new();
@@ -22,16 +31,17 @@ ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
 ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
 ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
 
-ok(! $curl->setopt(CURLOPT_WRITEHEADER, *HEAD), "Setting CURLOPT_WRITEHEADER");
+ok(! $curl->setopt(CURLOPT_WRITEHEADER, $head), "Setting CURLOPT_WRITEHEADER");
 
-open (BODY, "+>", undef);
-ok(! $curl->setopt(CURLOPT_FILE,*BODY), "Setting CURLOPT_FILE");
+my $body = tempfile();
+ok(! $curl->setopt(CURLOPT_FILE, $body), "Setting CURLOPT_FILE");
 
 
 my @myheaders;
 $myheaders[0] = "Server: www";
 $myheaders[1] = "User-Agent: Perl interface for libcURL";
 ok(! $curl->setopt(CURLOPT_HTTPHEADER, \@myheaders), "Setting CURLOPT_HTTPHEADER");
+
 
 my $body_called = 0;
 sub body_callback {
@@ -47,8 +57,9 @@ sub head_callback {
     return length($chunk); # OK
 }
 
+$hcall = \&head_callback;
 ok(! $curl->setopt(CURLOPT_WRITEFUNCTION, \&body_callback), "Setting CURLOPT_WRITEFUNCTION callback");
-ok(! $curl->setopt(CURLOPT_HEADERFUNCTION, \&head_callback), "Setting CURLOPT_HEADERFUNCTION callback");
+ok(! $curl->setopt(CURLOPT_HEADERFUNCTION, $hcall), "Setting CURLOPT_HEADERFUNCTION callback");
 
 ok(! $curl->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 
@@ -57,7 +68,7 @@ $other_handle = $curl->duphandle();
 ok($other_handle, 'duphandle seems to return something');
 ok(ref($other_handle) eq 'WWW::Curl::Easy', 'Dup handle looks like an object from the WWW::Curl::Easy module');
 
-foreach my $x ($other_handle,$curl) {
+foreach my $x ($curl,$other_handle) {
     my $retcode=$x->perform();
     ok(!$retcode, "Handle return code check");
     if ($retcode == 0) {
@@ -70,7 +81,6 @@ ok( $head_called >= 2, "Header callback seems to have worked");
 ok( $body_called >= 2, "Body callback seems to have worked");
 
 }
-
 
 ok(! $other_handle->setopt(CURLOPT_URL, $url), "Setting CURLOPT_URL");
 my $retcode=$other_handle->perform();

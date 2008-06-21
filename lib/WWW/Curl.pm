@@ -5,7 +5,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.02';
+    $VERSION = '4.03';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -49,14 +49,11 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 	# Setting the options
 	my $curl = new WWW::Curl::Easy;
 	
-	# Redirecting the default STDOUT target for header contents, to
-	# an anonymous temporary file
-	open(my $fileh, '+>', undef);
-	$curl->setopt(CURLOPT_HEADERDATA,$fileh);
-
 	$curl->setopt(CURLOPT_HEADER,1);
 	$curl->setopt(CURLOPT_URL, 'http://example.com');
 	my $response_body;
+
+	# NOTE - do not use a typeglob here. A reference to a typeglob is okay though.
 	open (my $fileb, ">", \$response_body);
 	$curl->setopt(CURLOPT_WRITEDATA,$fileb);
 

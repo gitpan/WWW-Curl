@@ -1,4 +1,11 @@
 Revision history for Perl extension WWW::Curl.
+4.03 Sat Jun 21 2008: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Removing option to pass destination files as a typeglob as
+      it is a backwards pointing magic and caused bugs.
+      Use a filehandle or reference instead.
+    - Fixed tests for 5.6, raised minimum Perl version to 5.6.1 due to tests.
+    - Fixed a duphandle bug.
 4.02 Thu Jun 19 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Adding forgotten backwards compatibility with older Perl versions
