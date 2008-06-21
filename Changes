@@ -1,4 +1,8 @@
 Revision history for Perl extension WWW::Curl.
+4.04 Sat Jun 21 2008: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Test::More and use_ok at begin time doesn't mesh with no plan.
+
 4.03 Sat Jun 21 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Removing option to pass destination files as a typeglob as

@@ -8,6 +8,7 @@ use lib 'blib/lib';
 use lib 'blib/arch';
 use Test::More;
 use File::Temp qw/tempfile/;
+use WWW::Curl::Easy;
 
 if ($] < 5.008) {
 	plan skip_all => "duphandle doesn't work on 5.6, too old";
@@ -15,7 +16,6 @@ if ($] < 5.008) {
 	plan tests => 25;
 }
 
-BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
 my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
 my $other_handle;

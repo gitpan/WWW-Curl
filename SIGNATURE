@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 ddf3d1dd50c3887f43855c7186373ddd6f26ec83 Changes
+SHA1 03c6dc0788af81edd944e4b1dd48a7970df36fdd Changes
 SHA1 9eb27a160d9259ca0827282c85effb4e50e33577 Curl.xs
 SHA1 63693eb209d0c6f82eb1f64b88c03e599351ad67 MANIFEST
-SHA1 31f89d80ad6038a04c36d787d475fcd24f7afdea META.yml
+SHA1 2f3aa9b3d0cf789412b9939f8173648109d0d2e3 META.yml
 SHA1 95ceb9b98627c50252d4b56356be28c416af96fa Makefile.PL
 SHA1 ee5ac8926c73fa624e8ef8908a52a8b3bc5bee3b README
 SHA1 f0577f8f88a6703e9bca2d10196cfd293f3d6f2f inc/Module/Install.pm
@@ -27,8 +27,8 @@ SHA1 dd345661caea9a4f18c6f39cd50f22739cf2459d inc/Module/Install/External.pm
 SHA1 c8b486eb7a38823afb92e4d5b00dbb57b43351d5 inc/Module/Install/MakeMaker.pm
 SHA1 cd14c8de2a67b0f14df9bc20c27f3edabd359d1b inc/Module/Install/Makefile.pm
 SHA1 a2162aec678d21988fce47ab805cf01773196292 inc/Module/Install/Metadata.pm
-SHA1 79e443fa00e9a6b8aeb2fdbc23ffe40fb0b999cd lib/WWW/Curl.pm
-SHA1 f63d1160af796cbde05b5ce55f6c9cf62a360eca lib/WWW/Curl/Easy.pm
+SHA1 e75740b274c876a04f2dadf945803a46c86cbb57 lib/WWW/Curl.pm
+SHA1 6c4e8fe8aec60bf3b835c6f539896d47580dd1dd lib/WWW/Curl/Easy.pm
 SHA1 5909923d44832d435213746d562bf6b6075f5ef3 lib/WWW/Curl/Form.pm
 SHA1 46e9ebfbe386bbf319f26e6d3eec7e17772026b5 lib/WWW/Curl/Multi.pm
 SHA1 51efe8d02da567645a0903df6972f2a92a8f4976 lib/WWW/Curl/Share.pm
@@ -44,7 +44,7 @@ SHA1 ec62c062c627e7f52df512eae496223bd49ad2f3 t/09times.t
 SHA1 9499f362a6d06a19aa6bc41d3647dbd5dc5aca63 t/10errbuf.t
 SHA1 0390b52a5cbebb2896f38aecc8602acb20199790 t/13slowleak.t
 SHA1 51da20f1c1dfff1a51a3adcc28016365584a3516 t/14duphandle.t
-SHA1 9de4cf29811da1dfba0654960e8646bd45248592 t/15duphandle-callback.t
+SHA1 2aa236a0bea6c7604714669ab50c4400aec76bd0 t/15duphandle-callback.t
 SHA1 785507b3fa6f414298cdcf7ceaba1f9274aa07d2 t/16formpost.t
 SHA1 e784a874eb36fd5b16a12fc58365cce697ecbbab t/17slist.t
 SHA1 4246e503682d25acf461e539104d10b66e74889c t/18twinhandles.t
@@ -63,13 +63,13 @@ SHA1 eee30cfb57132e7c8bdd4a5dd2f32273ab222115 t/new/10multi-callback.t
 SHA1 20ec0bd03ff2600505d38623153a6eb3087b5814 t/new/README
 SHA1 ac25bfa56d36f19cbee72a968b06372e88602a61 t/pod-coverage.t
 SHA1 0190346d7072d458c8a10a45c19f86db641dcc48 t/pod.t
-SHA1 27da71bdf55f5bdd9b37ca48b04466eb49acdb0f template/Easy.pm.tmpl
+SHA1 22927fcc4dc67aee72d96b22b66dc92a952bfd1d template/Easy.pm.tmpl
 SHA1 0b5ef1bf34b3402bec9009aea298367e62d4675a template/Share.pm.tmpl
 SHA1 468b011caaf4d54609b421027d7c6262a9260e89 typemap
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFIXIhW+22TSbOiiI8RAjJgAJsFr9xM+e1JhXvXoeEpjO3dsleDNwCcCw2A
-Vb8/QGUwwHfD3eZYf75mnwA=
-=bokn
+iD8DBQFIXKCv+22TSbOiiI8RAliHAJ4pMGooq+PK9KjG+EpCza4ZcfV59QCdEBze
+T6VD64nEBGHkvS51HKnvwis=
+=jq26
 -----END PGP SIGNATURE-----
