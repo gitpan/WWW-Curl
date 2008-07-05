@@ -1,6 +1,7 @@
 package WWW::Curl::Share;
 
 use strict;
+use warnings;
 use Carp;
 use vars qw(@ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 

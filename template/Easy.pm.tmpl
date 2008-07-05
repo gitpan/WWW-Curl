@@ -1,10 +1,11 @@
 package WWW::Curl::Easy;
 
 use strict;
+use warnings;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 
-$VERSION = '4.04';
+$VERSION = '4.05';
 
 require WWW::Curl;
 require Exporter;

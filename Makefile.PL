@@ -11,45 +11,45 @@ perl_version		'5.006001';
 no_index		directory => 'template';
 # This is a hack. If you have libcurl installed, just specify curl.h below
 # and comment out this line.
-requires_external_bin	'curl-config';
+if ($^O ne 'MSWin32') {
+	requires_external_bin	'curl-config';
+} else {
+	print	"Sorry, no automated install is available on Windows,\n".
+		"please see the README.Win32 file on instructions for a manual install.\n";
+	exit(0);
+}
+
+my @includes = qw();
+my ($cflags,$lflags, $ldflags) = ('','','');
 
 # This utility helper generates the constants function from curl.h
 # It is normally only used by the maintainer, but if you're curl is older
 # or missing some constants, you can delete curlopt-constants.c and re-run 'perl Makefile.PL'
 # You may need to specify where to find curl.h on your platform
 # These are guesses only, in case curl-config is not telling us.
+
+if ($^O ne 'MSWin32') {
+	push @includes, qw(
+		/usr/include
+		/usr/local/curl/include
+		/usr/local/include/curl
+		../../include
+		../curl/include
+	);
+}
+#
+# Get curl to tell us where it is, if we can.
 #
 
-my @includes = qw(
-    /usr/include
-    /usr/local/curl/include
-    /usr/local/include/curl
-    ../../include
-    ../curl/include
-    C:\\INCLUDE\\CURL
-);
 
-#
-# Get curl to tell us where it is, if we can. May well not find anything on Windows
-#
-my $cflags = `curl-config --cflags`;
-my $lflags = `curl-config --libs`;
-my $libcurl_version = `curl-config --version`;
-print "version is $libcurl_version";
+if ($^O ne 'MSWin32') {
+	$cflags = `curl-config --cflags`;
+	$lflags = `curl-config --libs`;
+}
 
 # can't find link flags, make some guesses
 if (!defined($lflags)) {
     $lflags="-lcurl";
-    # Windows version of libcurl - not widely tested, feedback welcome!
-    if ($^O eq 'MSWin32') {
-	foreach my $try (@includes) {
-	    if (-f $try . '\lib\libcurl_imp.lib') {
-		$lflags = $try . '\lib\libcurl_imp.lib' unless(-f $lflags);
-		last;
-		}
-	}
-        $lflags="libcurl.lib" unless ($lflags);
-    }
     print "Guessing your linker flags as: $lflags\n";
 }
 
@@ -295,7 +295,7 @@ HERE
 WriteMakefile(
     'NAME'         => 'WWW::Curl',
     'VERSION_FROM' => 'lib/WWW/Curl.pm',      # finds $VERSION
-    'LIBS'         => $lflags,        # e.g., '-lm'
+    'LIBS'         => "$ldflags $lflags",        # e.g., '-lm'
     'INC'          => $curl_d,        # e.g., '-I/usr/include/other'
     'clean' => { FILES => "curlopt-constants.c head.out body.out" }
 );

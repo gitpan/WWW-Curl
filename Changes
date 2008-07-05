@@ -1,4 +1,11 @@
 Revision history for Perl extension WWW::Curl.
+4.05 Sat Jul 06 2008: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Corrected the duphandle mechanism.
+    - Fixed a typo (fixes RT #37253).
+    - Added better Windows compatibility detection and separate
+      installation instructions (thanks to Shiyu Tang).
+
 4.04 Sat Jun 21 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Test::More and use_ok at begin time doesn't mesh with no plan.
@@ -10,6 +17,7 @@ Revision history for Perl extension WWW::Curl.
       Use a filehandle or reference instead.
     - Fixed tests for 5.6, raised minimum Perl version to 5.6.1 due to tests.
     - Fixed a duphandle bug.
+
 4.02 Thu Jun 19 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Adding forgotten backwards compatibility with older Perl versions

@@ -1,11 +1,12 @@
 package WWW::Curl;
 
 use strict;
+use warnings;
 use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.04';
+    $VERSION = '4.05';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -79,7 +80,7 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 	use WWW::Curl::Multi;
 
 	my %easy;
-	my $curl = WWW::Curl::Easy->new:
+	my $curl = WWW::Curl::Easy->new;
 	my $curl_id = '13'; # This should be a handle unique id.
 	$easy{$curl_id} = $curl;
 	my $active_handles = 0;
@@ -322,7 +323,7 @@ repackaged the module into a more modern form.
 
 Copyright (C) 2000-2005,2008 Daniel Stenberg, Cris Bailiff,
 Sebastian Riedel, Balint Szilakszi et al.
- 
+
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is furnished
 to do so, under the terms of the MPL or the MIT/X-derivate licenses. You may
