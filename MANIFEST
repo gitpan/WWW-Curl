@@ -8,17 +8,14 @@ inc/Module/Install/Makefile.pm
 inc/Module/Install/MakeMaker.pm
 inc/Module/Install/Metadata.pm
 lib/WWW/Curl.pm
-lib/WWW/Curl/Easy.pm
 lib/WWW/Curl/Form.pm
 lib/WWW/Curl/Multi.pm
-lib/WWW/Curl/Share.pm
 LICENSE
 Makefile.PL
 MANIFEST
 META.yml
 README
 README.Win32
-SIGNATURE
 t/00constants.t
 t/01basic.t
 t/02callbacks.t
@@ -36,8 +33,6 @@ t/16formpost.t
 t/17slist.t
 t/18twinhandles.t
 t/meta.t
-t/pod-coverage.t
-t/pod.t
 t/new/00constants.t
 t/new/01basic.t
 t/new/02header-callback.t
@@ -50,6 +45,8 @@ t/new/08duphandle.t
 t/new/09duphandle-callback.t
 t/new/10multi-callback.t
 t/new/README
+t/pod-coverage.t
+t/pod.t
 template/Easy.pm.tmpl
 template/Share.pm.tmpl
 typemap

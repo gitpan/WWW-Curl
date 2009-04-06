@@ -55,6 +55,8 @@ typedef struct {
     /* copy of error buffer var for caller*/
     char errbuf[CURL_ERROR_SIZE+1];
     char *errbufvarname;
+    I32 strings_index;
+    char* strings[CURLOPTTYPE_FUNCTIONPOINT - 10000];
 
 } perl_curl_easy;
 
@@ -173,7 +175,12 @@ static void perl_curl_easy_delete(perl_curl_easy *self)
 
     if (self->errbufvarname)
         free(self->errbufvarname);
-
+    for (i=0;i<=self->strings_index;i++) {
+        if (self->strings[i] != NULL) {
+	    char* ptr = self->strings[i];
+            Safefree(ptr);
+        }
+    }
     Safefree(self);
 
 }
@@ -660,7 +667,14 @@ curl_easy_duphandle(self)
            perl_curl_easy_register_callback(clone,&(clone->callback[i]), self->callback[i]);
            perl_curl_easy_register_callback(clone,&(clone->callback_ctx[i]), self->callback_ctx[i]);
         };
-
+	
+	for (i=0;i<=self->strings_index;i++) {
+		if (self->strings[i] != NULL) {
+			clone->strings[i] = savepv(self->strings[i]);
+			curl_easy_setopt(clone->curl, 10000 + i, clone->strings[i]);
+		}
+	}
+	clone->strings_index = self->strings_index;
         XSRETURN(1);
 
 char *
@@ -805,7 +819,12 @@ curl_easy_setopt(self, option, value)
 		else if (option < CURLOPTTYPE_FUNCTIONPOINT) { /* An objectpoint - string */
 			/* FIXME: Does curl really want NULL for empty strings? */
 			STRLEN dummy;
-			char *pv = SvPV(value, dummy);
+			/* Pre 7.17.0, the strings aren't copied by libcurl.*/
+	           	char* pv = SvOK(value) ? SvPV(value, dummy) : "";
+	           	I32 len = (I32)dummy;
+	           	pv = savepvn(pv, len);
+			self->strings[option-10000] = pv;
+			if (self->strings_index < option - 10000) self->strings_index = option - 10000;
 			RETVAL = curl_easy_setopt(self->curl, option, SvOK(value) ? pv : NULL);
 		}
 #ifdef CURLOPTTYPE_OFF_T

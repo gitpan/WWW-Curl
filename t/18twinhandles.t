@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
@@ -39,11 +39,12 @@ for my $handle ($curl1,$curl2) {
 }
 
 
-ok(! $curl1->setopt(CURLOPT_URL, "error:bad-url"), "Setting deliberately bad url succeeds - should return error on perform"); # deliberate error
+ok(! $curl1->setopt(CURLOPT_URL, "zxxypz://whoa"), "Setting deliberately bad protocol succeeds - should return error on perform"); # deliberate error
 ok(! $curl2->setopt(CURLOPT_URL, $url), "Setting OK url");
 
 my $code1=$curl1->perform();
 ok($code1 != 0, "Curl1 handle fails as expected");
+ok($code1 == CURLE_UNSUPPORTED_PROTOCOL, "Curl1 handle fails with the correct error");
 
 my $code2=$curl2->perform();
 ok($code2 == 0, "Curl2 handle succeeds");

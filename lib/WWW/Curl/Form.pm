@@ -1,5 +1,6 @@
 package WWW::Curl::Form;
 use strict;
+use warnings;
 
 # In development!
 #

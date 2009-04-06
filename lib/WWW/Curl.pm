@@ -6,7 +6,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.05';
+    $VERSION = '4.06';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -268,8 +268,8 @@ than it's C counterpart. Please see the section about WWW::Curl::Multi above.
 =head1 USAGE CASES
 
 The standard Perl WWW module, LWP should be used in most cases to work with
-the HTTP or FTP protocol from Perl. However, there are some cases where LWP doesn't
-perform well. One is speed and the other is paralellism. WWW::Curl is much faster,
+HTTP or FTP from Perl. However, there are some cases where LWP doesn't
+perform well. One is speed and the other is parallelism. WWW::Curl is much faster,
 uses much less CPU cycles and it's capable of non-blocking parallel requests.
 
 In some cases, for example when building a web crawler, cpu usage and parallel downloads are
@@ -279,7 +279,7 @@ HTTP::Response.
 
 =head1 CHANGES
 
-Version 4.01 adds several bugfixes. See Changes file.
+Version 4.01 - 4.06 adds several bugfixes and extends functionality coverage. See Changes file.
 
 Version 4.00 added new documentation, the build system changed to Module::Install,
 the test suite was rewritten to use Test::More, a new calling syntax for WWW::Curl::Multi

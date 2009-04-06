@@ -1,4 +1,14 @@
 Revision history for Perl extension WWW::Curl.
+4.06 Sun Apr 05 2009: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Fixed a setopt issue that could cause a setopt string to get
+      corrupted with pre 7.17.0 libcurl versions.
+      (Thanks to Andreas Marienborg for the excellent bugreport and testcase!)
+    - Made the Makefile.PL curl.h parsing slightly more generic to detect a
+      wider selection of constants (fixes debian bugs #519841 and #518942).
+      This makes it possible to use CURLE_* and CURL_NETRC_* constants.
+    - Added a clearly invalid protocol to t/18twinhandles.t (fixes RT #41425).
+
 4.05 Sat Jul 06 2008: - Balint Szilakszi <szbalint at cpan.org>
 
     - Corrected the duphandle mechanism.

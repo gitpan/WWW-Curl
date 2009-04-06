@@ -1,6 +1,7 @@
 package WWW::Curl::Multi;
 
 use strict;
+use warnings;
 use WWW::Curl;
 
 1;
