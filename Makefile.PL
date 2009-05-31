@@ -12,12 +12,16 @@ no_index		directory => 'template';
 # This is a hack. If you have libcurl installed, just specify curl.h below
 # and comment out this line.
 if ($^O ne 'MSWin32') {
-	requires_external_bin	'curl-config';
+    if (!$ENV{CURL_CONFIG}) {
+	    requires_external_bin	'curl-config';
+    }
 } else {
 	print	"Sorry, no automated install is available on Windows,\n".
 		"please see the README.Win32 file on instructions for a manual install.\n";
 	exit(0);
 }
+
+my $curl_config = $ENV{CURL_CONFIG} || 'curl-config';
 
 my @includes = qw();
 my ($cflags,$lflags, $ldflags) = ('','','');
@@ -43,8 +47,8 @@ if ($^O ne 'MSWin32') {
 
 
 if ($^O ne 'MSWin32') {
-	$cflags = `curl-config --cflags`;
-	$lflags = `curl-config --libs`;
+	$cflags = `${curl_config} --cflags`;
+	$lflags = `${curl_config} --libs`;
 }
 
 # can't find link flags, make some guesses

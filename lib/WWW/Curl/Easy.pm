@@ -18,7 +18,6 @@ require AutoLoader;
 # Do not simply export all your public functions/methods/constants.
 
 @EXPORT = qw(
-@CURLOPT_INCLUDE@
 );
 
 $WWW::Curl::Easy::headers = "";

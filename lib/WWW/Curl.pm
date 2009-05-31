@@ -6,9 +6,13 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.06';
+    $VERSION = '4.07';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
+}
+
+END {
+    _global_cleanup();
 }
 
 1;
@@ -242,6 +246,10 @@ Only used internally, not exposed through the public API.
 
 Not implemented.
 
+=item curl_global_cleanup
+
+Only used internally and called automatically upon exit.
+
 =item curl_slist_append
 
 Only used internally, not exposed through the public API.
@@ -279,7 +287,7 @@ HTTP::Response.
 
 =head1 CHANGES
 
-Version 4.01 - 4.06 adds several bugfixes and extends functionality coverage. See Changes file.
+Version 4.01 - 4.07 adds several bugfixes and extends functionality coverage. See Changes file.
 
 Version 4.00 added new documentation, the build system changed to Module::Install,
 the test suite was rewritten to use Test::More, a new calling syntax for WWW::Curl::Multi
@@ -311,7 +319,8 @@ reworked from the previous Curl::easy release (1.21) by Cris Bailiff.
 
 =head1 AUTHORS
 
-Currently maintained by Cris Bailiff <c.bailiff+curl at devsecure.com>
+Currently maintained by Cris Bailiff <c.bailiff+curl at devsecure.com> and
+Balint Szilakszi <szbalint at cpan.org>.
 
 Original Author Georg Horn <horn@koblenz-net.de>, with additional callback,
 pod and test work by Cris Bailiff <c.bailiff+curl@devsecure.com> and
@@ -321,7 +330,7 @@ repackaged the module into a more modern form.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2000-2005,2008 Daniel Stenberg, Cris Bailiff,
+Copyright (C) 2000-2005,2008,2009 Daniel Stenberg, Cris Bailiff,
 Sebastian Riedel, Balint Szilakszi et al.
 
 You may opt to use, copy, modify, merge, publish, distribute and/or sell

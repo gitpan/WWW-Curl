@@ -40,4 +40,3 @@ if ($retcode == 0) {
 
 }
 
-WWW::Curl::Easy::global_cleanup; #noop

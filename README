@@ -19,6 +19,9 @@ an explicit path when building the Makefile:
 
     perl Makefile.PL /home/foo/curl/include
 
+If you want to specify which curl-config to use instead of the first in path 
+set the environment variable CURL_CONFIG to point at the curl-config to use.
+
 Minimum version requirements:
 
 This module, starting from version 4 requires at least Perl 5.6 and libcurl 7.10.8.

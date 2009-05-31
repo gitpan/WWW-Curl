@@ -1,4 +1,17 @@
 Revision history for Perl extension WWW::Curl.
+4.07 Sun May 31 2009: - Balint Szilakszi <szbalint at cpan.org>
+
+    - Fixed >32bit integer option passing to libcurl on 32bit systems.
+      (Thanks to Peter Heuchert for the report and fix suggestion!)
+    - The CURL_CONFIG environment variable can now be used to specify
+      which curl-config to use (contributed by claes).
+    - Fixed segfault when a string option with setopt was set to undef
+      (contributed by claes).
+    - Fixed incomplete cleanup routine at destruction time
+      (contributed by claes).
+    - Readded Easy.pm and Share.pm stubs so that they are indexed by
+      CPAN, thus avoiding complications with outdated versions appearing.
+
 4.06 Sun Apr 05 2009: - Balint Szilakszi <szbalint at cpan.org>
 
     - Fixed a setopt issue that could cause a setopt string to get

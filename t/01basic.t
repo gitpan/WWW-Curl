@@ -2,12 +2,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 14;
+use Test::More tests => 16;
 use File::Temp qw/tempfile/;
 
 BEGIN { use_ok( 'WWW::Curl::Easy' ); }
 
 my $url = $ENV{CURL_TEST_URL} || "http://www.google.com";
+
 
 my $memfile = '';
 # Init the curl session
@@ -18,6 +19,8 @@ ok(ref($curl) eq 'WWW::Curl::Easy', 'Curl session looks like an object from the 
 ok(! $curl->setopt(CURLOPT_NOPROGRESS, 1), "Setting CURLOPT_NOPROGRESS");
 ok(! $curl->setopt(CURLOPT_FOLLOWLOCATION, 1), "Setting CURLOPT_FOLLOWLOCATION");
 ok(! $curl->setopt(CURLOPT_TIMEOUT, 30), "Setting CURLOPT_TIMEOUT");
+ok(! $curl->setopt(CURLOPT_ENCODING, undef), "Setting CURLOPT_ENCODING to undef");
+ok(! $curl->setopt(CURLOPT_RESUME_FROM_LARGE, 0), "Setting CURLOPT_ENCODING to undef");
 $curl->setopt(CURLOPT_HEADER, 1);
 
 my $head = tempfile();

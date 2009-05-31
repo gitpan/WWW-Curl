@@ -573,6 +573,13 @@ typedef perl_curl_multi * WWW__Curl__Multi;
 
 typedef perl_curl_share * WWW__Curl__Share;
 
+MODULE = WWW::Curl    PACKAGE = WWW::Curl          PREFIX = curl_
+
+void
+curl__global_cleanup()
+    CODE:
+        curl_global_cleanup();
+
 MODULE = WWW::Curl    PACKAGE = WWW::Curl::Easy    PREFIX = curl_easy_
 
 BOOT:
@@ -818,7 +825,7 @@ curl_easy_setopt(self, option, value)
                 }
 		else if (option < CURLOPTTYPE_FUNCTIONPOINT) { /* An objectpoint - string */
 			/* FIXME: Does curl really want NULL for empty strings? */
-			STRLEN dummy;
+			STRLEN dummy = 0;
 			/* Pre 7.17.0, the strings aren't copied by libcurl.*/
 	           	char* pv = SvOK(value) ? SvPV(value, dummy) : "";
 	           	I32 len = (I32)dummy;
@@ -831,8 +838,15 @@ curl_easy_setopt(self, option, value)
 		else if (option < CURLOPTTYPE_OFF_T) { /* A function - notreached? */
                     		croak("Unknown curl option of type function"); 
 		}
-		else { /* A LARGE file option using curl_off_t */
-			    RETVAL = curl_easy_setopt(self->curl, option, (curl_off_t)SvIV(value));
+		else { /* A LARGE file option using curl_off_t, handling larger than 32bit sizes without 64bit integer support */
+                            if (SvOK(value) && looks_like_number(value)) {
+                                STRLEN dummy = 0;
+                                char* pv = SvPV(value, dummy);
+                                char* pdummy;
+                                RETVAL = curl_easy_setopt(self->curl, option, (curl_off_t) strtoll(pv,&pdummy,10));
+                            } else {
+                                RETVAL = 0;
+                            }
 		}
 #endif
                 ;
@@ -928,11 +942,6 @@ curl_easy_DESTROY(self)
     WWW::Curl::Easy self
     CODE:
         perl_curl_easy_delete(self);
-
-void
-curl_easy_global_cleanup()
-    CODE:
-        curl_global_cleanup();
 
 SV *
 curl_easy_strerror(self, errornum)
