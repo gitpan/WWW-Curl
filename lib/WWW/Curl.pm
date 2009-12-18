@@ -6,7 +6,7 @@ use vars qw(@ISA $VERSION);
 use DynaLoader;
 
 BEGIN {
-    $VERSION = '4.09';
+    $VERSION = '4.10';
     @ISA     = qw(DynaLoader);
     __PACKAGE__->bootstrap;
 }
@@ -271,6 +271,11 @@ Not yet implemented.
 Most methods are either not exposed through the WWW::Curl::Multi API or they behave differently
 than it's C counterpart. Please see the section about WWW::Curl::Multi above.
 
+=item curl_multi_fdset
+
+This method returns three arrayrefs: the read, write and exception fds libcurl knows about.
+In the case of no file descriptors in the given set, an empty array is returned.
+
 =back
 
 =head1 USAGE CASES
@@ -311,7 +316,7 @@ Version 3.02 adds some backwards compatibility for scripts still using
 
 Version 3.01 added some support for pre-multi versions of libcurl.
 
-Version 3.00 adds WWW::Curl::Multi interface, and a new module names
+Version 3.00 adds WWW::Curl::Multi interface, and new module names
 following perl conventions (WWW::Curl::Easy rather than WWW::Curl::easy),
 by Sebastian Riedel <sri at cpan.org>.
 

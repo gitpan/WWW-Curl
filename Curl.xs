@@ -911,6 +911,22 @@ curl_easy_getinfo(self, option, ... )
                 RETVAL = newSVnv(vdouble);
                 break;
             }
+            case CURLINFO_SLIST:
+            {
+                struct curl_slist *vlist, *entry;
+                AV *items = newAV();
+                curl_easy_getinfo(self->curl, option, &vlist);
+                if (vlist != NULL) {
+                    entry = vlist;
+                    while (entry) {
+                        av_push(items, newSVpv(entry->data, 0));
+                        entry = entry->next;
+                    }
+                    curl_slist_free_all(vlist);
+                }
+                RETVAL = newRV(sv_2mortal((SV *) items));
+                break;
+            }
             default: {
                 RETVAL = newSViv(CURLE_BAD_FUNCTION_ARGUMENT);
                 break;
@@ -1080,6 +1096,40 @@ curl_multi_info_read(self)
 	} else {
 		XSRETURN_EMPTY;
 	}
+
+SV *
+curl_multi_fdset(self)
+    WWW::Curl::Multi self
+    PREINIT:
+        fd_set fdread;
+        fd_set fdwrite;
+        fd_set fdexcep;
+        int maxfd;
+        int i;
+    PPCODE:
+        FD_ZERO(&fdread);
+        FD_ZERO(&fdwrite);
+        FD_ZERO(&fdexcep);
+        AV *readset = newAV();
+        AV *writeset = newAV();
+        AV *excepset = newAV();
+        curl_multi_fdset(self->curlm, &fdread, &fdwrite, &fdexcep, &maxfd);
+        if ( maxfd != -1 ) {
+            for (i=0;i <= maxfd;i++) {
+                if (FD_ISSET(i, &fdread)) {
+                    av_push(readset, newSViv(i));
+                }
+                if (FD_ISSET(i, &fdwrite)) {
+                    av_push(writeset, newSViv(i));
+                }
+                if (FD_ISSET(i, &fdexcep)) {
+                    av_push(excepset, newSViv(i));
+                }
+            }
+        }
+	XPUSHs(sv_2mortal(newRV(sv_2mortal((SV *) readset))));
+	XPUSHs(sv_2mortal(newRV(sv_2mortal((SV *) writeset))));
+	XPUSHs(sv_2mortal(newRV(sv_2mortal((SV *) excepset))));
 
 int
 curl_multi_perform(self)
