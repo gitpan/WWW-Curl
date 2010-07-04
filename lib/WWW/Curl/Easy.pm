@@ -5,7 +5,7 @@ use warnings;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 
-$VERSION = '4.11';
+$VERSION = '4.12';
 
 require WWW::Curl;
 require Exporter;
@@ -22,6 +22,11 @@ require AutoLoader;
 
 $WWW::Curl::Easy::headers = "";
 $WWW::Curl::Easy::content = "";
+
+sub const_string {
+	my ($self, $constant) = @_;
+	return constant($constant,0);
+}
 
 sub AUTOLOAD {
 
