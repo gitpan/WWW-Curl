@@ -3,21 +3,19 @@ package WWW::Curl::Easy;
 use strict;
 use warnings;
 use Carp;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $AUTOLOAD);
 
-$VERSION = '4.12';
+our $VERSION = '4.13';
 
-require WWW::Curl;
-require Exporter;
-require AutoLoader;
+use WWW::Curl ();
+use Exporter  ();
 
-@ISA = qw(Exporter DynaLoader);
+our @ISA = qw(Exporter);
 
 # Items to export into callers namespace by default. Note: do not export
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
-@EXPORT = qw(
+our @EXPORT = qw(
 );
 
 $WWW::Curl::Easy::headers = "";
@@ -25,16 +23,25 @@ $WWW::Curl::Easy::content = "";
 
 sub const_string {
 	my ($self, $constant) = @_;
-	return constant($constant,0);
+	return constant($constant);
 }
 
 sub AUTOLOAD {
-
+    our $AUTOLOAD;
     # This AUTOLOAD is used to 'autoload' constants from the constant()
     # XS function.
 
     ( my $constname = $AUTOLOAD ) =~ s/.*:://;
-    return constant( $constname, 0 );
+    my $value = constant( $constname );
+    if($!) {
+        croak("Undefined subroutine &$AUTOLOAD called");
+    }
+
+    {
+        no strict 'refs';
+        *{$AUTOLOAD} = sub { $value };
+    }
+    return $value;
 }
 
 1;

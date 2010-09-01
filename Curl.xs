@@ -280,9 +280,8 @@ fwrite_wrapper (
     void *call_function,
     void *call_ctx)
 {
-    dSP;
-
     if (call_function) { /* We are doing a callback to perl */
+        dSP;
         int count, status;
 
         ENTER;
@@ -587,9 +586,8 @@ BOOT:
 PROTOTYPES: ENABLE
 
 int
-constant(name,arg)
+constant(name)
     char * name
-    int arg
 
 
 void
@@ -908,6 +906,7 @@ curl_easy_getinfo(self, option, ... )
                 RETVAL = newSVnv(vdouble);
                 break;
             }
+#ifdef CURLINFO_SLIST
             case CURLINFO_SLIST:
             {
                 struct curl_slist *vlist, *entry;
@@ -924,6 +923,7 @@ curl_easy_getinfo(self, option, ... )
                 RETVAL = newRV(sv_2mortal((SV *) items));
                 break;
             }
+#endif /* CURLINFO_SLIST */
             default: {
                 RETVAL = newSViv(CURLE_BAD_FUNCTION_ARGUMENT);
                 break;
@@ -976,9 +976,8 @@ curl_easy_strerror(self, errornum)
 MODULE = WWW::Curl    PACKAGE = WWW::Curl::Form    PREFIX = curl_form_
 
 int
-constant(name,arg)
+constant(name)
     char * name
-    int arg
 
 void
 curl_form_new(...)
@@ -1000,7 +999,7 @@ curl_form_new(...)
         XSRETURN(1);
 
 void
-curl_formadd(self,name,value)
+curl_form_formadd(self,name,value)
     WWW::Curl::Form self
     char *name
     char *value
@@ -1011,7 +1010,7 @@ curl_formadd(self,name,value)
             CURLFORM_END); 
 
 void
-curl_formaddfile(self,filename,description,type)
+curl_form_formaddfile(self,filename,description,type)
     WWW::Curl::Form self
     char *filename
     char *description
@@ -1193,9 +1192,8 @@ MODULE = WWW::Curl    PACKAGE = WWW::Curl::Share    PREFIX = curl_share_
 PROTOTYPES: ENABLE
 
 int
-constant(name,arg)
+constant(name)
     char * name
-    int arg
 
 void
 curl_share_new(...)
