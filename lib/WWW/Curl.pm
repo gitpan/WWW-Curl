@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '4.13';
+our $VERSION = '4.14';
 XSLoader::load(__PACKAGE__, $VERSION);
 
 END {
@@ -47,16 +47,14 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 	use warnings;
 	use WWW::Curl::Easy;
 
-	# Setting the options
-	my $curl = new WWW::Curl::Easy;
+	my $curl = WWW::Curl::Easy->new;
 	
 	$curl->setopt(CURLOPT_HEADER,1);
 	$curl->setopt(CURLOPT_URL, 'http://example.com');
-	my $response_body;
 
-	# NOTE - do not use a typeglob here. A reference to a typeglob is okay though.
-	open (my $fileb, ">", \$response_body);
-	$curl->setopt(CURLOPT_WRITEDATA,$fileb);
+	# A filehandle, reference to a scalar or reference to a typeglob can be used here.
+	my $response_body;
+	$curl->setopt(CURLOPT_WRITEDATA,\$response_body);
 
 	# Starts the actual request
 	my $retcode = $curl->perform;
@@ -68,7 +66,8 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 		# judge result and next action based on $response_code
 		print("Received response: $response_body\n");
 	} else {
-		print("An error happened: ".$curl->strerror($retcode)." ($retcode)\n");
+		# Error code, type of error, error message
+		print("An error happened: $retcode ".$curl->strerror($retcode)." ".$curl->errbuf."\n");
 	}
 
 
@@ -282,6 +281,10 @@ Only used internally, not exposed through the public API.
 
 Not implemented and won't be, as this method is considered deprecated.
 
+=item curl_version
+
+Seems to work.
+
 =item curl_version_info
 
 Not yet implemented.
@@ -295,6 +298,28 @@ than it's C counterpart. Please see the section about WWW::Curl::Multi above.
 
 This method returns three arrayrefs: the read, write and exception fds libcurl knows about.
 In the case of no file descriptors in the given set, an empty array is returned.
+
+=back
+
+=head1 NUANCES
+
+=head2 Header output for redirects
+
+It might be surprising that if C<CURLOPT_FOLLOWLOCATION> is set and header output was enabled, headers show up for all http responses.
+The reasoning behind that and possible code adjustments are outlined here: L<https://rt.cpan.org/Ticket/Display.html?id=61569>.
+
+=head1 ADDITIONAL METHODS
+
+=head2 On WWW::Curl::Easy objects
+
+=over 
+
+=item pushopt
+
+Like C<setopt> but instead of overriding any previously set values it adds it 
+to the end. Can be used with C<CURLOPT_HTTPHEADER>, C<CURLOPT_QUOTE> and 
+C<CURLOPT_POSTQUOTE>.
+
 
 =back
 

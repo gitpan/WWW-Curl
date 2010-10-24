@@ -36,6 +36,8 @@ if ($vernum && hex($vernum) <= $minimum_ver) {
 	exit(0);
 }
 
+print "The version is $version\n";
+
 my @includes = qw();
 my ($cflags,$lflags, $ldflags) = ('','','');
 
@@ -109,7 +111,9 @@ if (!defined($curl_h)) {
             my ($option, $value) =
                 m/^#define CURLOPT_(\w+)\s+CURLOPT_(\w+)/;
 	    $constants{CURLOPT_}->{$option} = $value;
-        } elsif ($_ =~ m/^\s*(CURLINFO_|CURLSHOPT_|CURL_LOCK_DATA_|CURLE_|CURL_NETRC_)(\w+)/) {
+        } elsif ($_ =~ m/^\s*(CURLINFO_|CURLSHOPT_|CURLE_|CURL_LOCK_)(\w+)/) {
+	    $constants{$1}->{$2} = $2;
+        } elsif ($_ =~ m/^\s*(CURL_)(\w+)(?:[,\s]*)(?:\/\*.*)?$/) {
 	    $constants{$1}->{$2} = $2;
         } elsif ($_ =~ m/^\s*CURLPROXY_(\w+)\s*=\s*\d+/) {
             $constants{CURLPROXY_}->{$1} = $1;
@@ -188,7 +192,7 @@ HERE
         if ($line !~ m/^\@CURLOPT_INCLUDE\@/) {
 			print EASY_PM $line;
         } else {
-	for my $group (qw/CURLOPT_ CURLINFO_ CURLE_ CURL_NETRC_ CURLPROXY_/) {
+	for my $group (qw/CURLOPT_ CURLINFO_ CURLE_ CURL_ CURLPROXY_/) {
             for my $option (sort keys %{$constants{$group}}) {
                 next unless $option;
                 print EASY_PM $group.$option."\n";
@@ -210,8 +214,8 @@ HERE
             foreach my $option (sort keys %{$constants{CURLSHOPT_}}) {
                 print SHARE_PM $1 . "CURLSHOPT_".$option . "\n";
             }
-            foreach my $option (sort keys %{$constants{CURL_LOCK_DATA_}}) {
-                print SHARE_PM $1 . "CURL_LOCK_DATA_".$option . "\n";
+            foreach my $option (sort keys %{$constants{CURL_LOCK_}}) {
+                print SHARE_PM $1 . "CURL_LOCK_".$option . "\n";
             }
         }
     }

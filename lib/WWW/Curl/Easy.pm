@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '4.13';
+our $VERSION = '4.14';
 
 use WWW::Curl ();
 use Exporter  ();
@@ -42,6 +42,11 @@ sub AUTOLOAD {
         *{$AUTOLOAD} = sub { $value };
     }
     return $value;
+}
+
+sub pushopt {
+    my ($self, $option, $value) = @_;
+    $self->setopt($option, $value, 1);
 }
 
 1;
