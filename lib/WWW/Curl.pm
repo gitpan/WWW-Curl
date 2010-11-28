@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '4.14';
+our $VERSION = '4.15';
 XSLoader::load(__PACKAGE__, $VERSION);
 
 END {
@@ -70,6 +70,7 @@ Here is a small snippet of making a request with WWW::Curl::Easy.
 		print("An error happened: $retcode ".$curl->strerror($retcode)." ".$curl->errbuf."\n");
 	}
 
+See L<curl_easy_setopt(3)> for details of C<setopt()>.
 
 =head1 WWW::Curl::Multi
 
@@ -308,6 +309,10 @@ In the case of no file descriptors in the given set, an empty array is returned.
 It might be surprising that if C<CURLOPT_FOLLOWLOCATION> is set and header output was enabled, headers show up for all http responses.
 The reasoning behind that and possible code adjustments are outlined here: L<https://rt.cpan.org/Ticket/Display.html?id=61569>.
 
+=head2 CURLOPT_PRIVATE
+
+Despite what the libcurl manual says, in Perl land, only string values are suitable for this option.
+
 =head1 ADDITIONAL METHODS
 
 =head2 On WWW::Curl::Easy objects
@@ -398,5 +403,7 @@ pick one of these licenses.
 L<http://curl.haxx.se>
 
 L<http://search.cpan.org/perldoc?WWW::Curl::Simple>
+
+L<libcurl(3)>
 
 The development source code is also available: L<http://github.com/szbalint/WWW--Curl/tree/master>
