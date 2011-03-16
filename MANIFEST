@@ -1,24 +1,12 @@
 Changes
 Curl.xs
-inc/Module/Install.pm
-inc/Module/Install/Base.pm
-inc/Module/Install/Can.pm
-inc/Module/Install/External.pm
-inc/Module/Install/Makefile.pm
-inc/Module/Install/MakeMaker.pm
-inc/Module/Install/Metadata.pm
 lib/WWW/Curl.pm
-lib/WWW/Curl/Easy.pm
-lib/WWW/Curl/Form.pm
 lib/WWW/Curl/Multi.pm
-lib/WWW/Curl/Share.pm
 LICENSE
 Makefile.PL
 MANIFEST
-META.yml
 README
 README.Win32
-SIGNATURE
 t/00constants.t
 t/01basic.t
 t/02callbacks.t
@@ -55,5 +43,8 @@ t/pod-coverage.t
 t/pod.t
 t/symbols-in-versions
 template/Easy.pm.tmpl
+template/Form.pm.tmpl
 template/Share.pm.tmpl
 typemap
+META.yml                                 Module meta-data (added by MakeMaker)
+SIGNATURE                                Public-key signature (added by MakeMaker)
