@@ -10,7 +10,6 @@ use Exporter  ();
 our @ISA = qw(Exporter);
 
 our @EXPORT = qw(
-@CURLSHOPT_INCLUDE@
 );
 
 sub AUTOLOAD {

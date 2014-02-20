@@ -1,17 +1,30 @@
-package WWW::Curl::Share;
+package WWW::Curl::Easy;
 
 use strict;
 use warnings;
 use Carp;
+
+our $VERSION = '4.16';
 
 use WWW::Curl ();
 use Exporter  ();
 
 our @ISA = qw(Exporter);
 
+# Items to export into callers namespace by default. Note: do not export
+# names by default without a very good reason. Use EXPORT_OK instead.
+# Do not simply export all your public functions/methods/constants.
+
 our @EXPORT = qw(
-@CURLSHOPT_INCLUDE@
 );
+
+$WWW::Curl::Easy::headers = "";
+$WWW::Curl::Easy::content = "";
+
+sub const_string {
+	my ($self, $constant) = @_;
+	return constant($constant);
+}
 
 sub AUTOLOAD {
     our $AUTOLOAD;
@@ -20,8 +33,8 @@ sub AUTOLOAD {
 
     ( my $constname = $AUTOLOAD ) =~ s/.*:://;
     my $value = constant( $constname );
-    if ($!) {
-        croak("Undefined subroutine &$AUTOLOAD failed for reasons of $!, constname was $constname, value was: $value");
+    if($!) {
+        croak("Undefined subroutine &$AUTOLOAD called");
     }
 
     {
@@ -31,12 +44,18 @@ sub AUTOLOAD {
     return $value;
 }
 
+sub pushopt {
+    my ($self, $option, $value) = @_;
+    $self->setopt($option, $value, 1);
+}
+
 1;
+
 __END__
 
-
-Copyright (C) 2008, Anton Fedorov (datacompboy <at> mail.ru)
-
+Copyright (C) 2000-2005,2008 Daniel Stenberg, Cris Bailiff,
+Sebastian Riedel, et al.
+ 
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is furnished
 to do so, under the terms of the MPL or the MIT/X-derivate licenses. You may
