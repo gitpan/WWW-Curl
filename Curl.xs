@@ -7,8 +7,7 @@
  * Copyright (C) 2000, 2001, 2002, 2005, 2008 Daniel Stenberg, Cris Bailiff, et al.  
  * You may opt to use, copy, modify, merge, publish, distribute and/or 
  * sell copies of the Software, and permit persons to whom the 
- * Software is furnished to do so, under the terms of the MPL or
- * the MIT/X-derivate licenses. You may pick one of these licenses.
+ * Software is furnished to do so, under the terms of the MIT license.
  */
 #define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
@@ -39,7 +38,9 @@ typedef enum {
     SLIST_HTTPHEADER = 0,
     SLIST_QUOTE,
     SLIST_POSTQUOTE,
+#ifdef CURLOPT_RESOLVE
     SLIST_RESOLVE,
+#endif
     SLIST_LAST
 } perl_curl_easy_slist_code;
 
@@ -128,9 +129,11 @@ slist_index(int option)
         case CURLOPT_POSTQUOTE:
             return SLIST_POSTQUOTE;
             break;
+#ifdef CURLOPT_RESOLVE
         case CURLOPT_RESOLVE:
             return SLIST_RESOLVE;
             break;
+#endif
     }
     croak("Bad slist index requested\n");
     return SLIST_LAST;
@@ -751,7 +754,9 @@ curl_easy_setopt(self, option, value, push=0)
             case CURLOPT_HTTPHEADER:
             case CURLOPT_QUOTE:
             case CURLOPT_POSTQUOTE:
+#ifdef CURLOPT_RESOLVE
             case CURLOPT_RESOLVE:
+#endif
             {
                 /* This is an option specifying a list, which we put in a curl_slist struct */
                 AV *array = (AV *)SvRV(value);

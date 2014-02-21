@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '4.16';
+our $VERSION = '4.17';
 XSLoader::load(__PACKAGE__, $VERSION);
 
 END {
@@ -133,7 +133,7 @@ a new batch of easy handles for processing.
 
 =head1 WWW::Curl::Share
 
-	use WWW::CURL::Share;
+	use WWW::Curl::Share;
 	my $curlsh = new WWW::Curl::Share;
 	$curlsh->setopt(CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
 	$curlsh->setopt(CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
@@ -390,13 +390,12 @@ repackaged the module into a more modern form.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2000-2005,2008-2010 Daniel Stenberg, Cris Bailiff,
+Copyright (C) 2000-2005,2008-2014 Daniel Stenberg, Cris Bailiff,
 Sebastian Riedel, Balint Szilakszi et al.
 
 You may opt to use, copy, modify, merge, publish, distribute and/or sell
 copies of the Software, and permit persons to whom the Software is furnished
-to do so, under the terms of the MPL or the MIT/X-derivate licenses. You may
-pick one of these licenses.
+to do so, under the terms of the MIT license.
 
 =head1 SEE ALSO
 
